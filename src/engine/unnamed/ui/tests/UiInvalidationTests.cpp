@@ -245,6 +245,36 @@ namespace Unnamed {
 
 			assert(root.IsInvalidated( UI_INVALIDATION::CHILDREN ));
 		}
+
+		void TestMeasureAlsoInvalidatesArrange() {
+			TestInvalidationElement element;
+
+			element.ClearForTest(
+				UI_INVALIDATION::ALL
+			);
+
+			element.Invalidate(
+				UI_INVALIDATION::MEASURE
+			);
+
+			assert(
+				element.IsInvalidated(
+					UI_INVALIDATION::MEASURE
+				)
+			);
+
+			assert(
+				element.IsInvalidated(
+					UI_INVALIDATION::ARRANGE
+				)
+			);
+
+			assert(
+				!element.IsInvalidated(
+					UI_INVALIDATION::PAINT
+				)
+			);
+		}
 	}
 
 	void RunUiInvalidationTests() {
@@ -259,5 +289,6 @@ namespace Unnamed {
 		TestPaintDoesNotPropagate();
 		TestAddChildInvalidation();
 		TestClearChildrenNotification();
+		TestMeasureAlsoInvalidatesArrange();
 	}
 } // namespace Unnamed

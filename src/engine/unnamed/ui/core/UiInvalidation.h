@@ -42,7 +42,7 @@ namespace Unnamed {
 	}
 
 	/// @brief UI_INVALIDATION フラグのビットANDを行います。
-	/// @param lhs 左辺 
+	/// @param lhs 左辺
 	/// @param rhs 右辺
 	/// @return ビットANDされた UI_INVALIDATION フラグ
 	[[nodiscard]] constexpr UI_INVALIDATION operator&(
@@ -57,7 +57,7 @@ namespace Unnamed {
 
 	/// @brief UI_INVALIDATION フラグのビット反転を行います。
 	/// @param value 反転する UI_INVALIDATION フラグ
-	/// @return 反転された UI_INVALIDATION フラグ 
+	/// @return 反転された UI_INVALIDATION フラグ
 	[[nodiscard]] constexpr UI_INVALIDATION operator~(
 		const UI_INVALIDATION value
 	) noexcept {
@@ -106,5 +106,19 @@ namespace Unnamed {
 		const UI_INVALIDATION value, const UI_INVALIDATION flags
 	) noexcept {
 		return (value & flags) == flags;
+	}
+
+	/// @brief Invalidation間の依存関係を展開します。
+	/// @note Measureが必要な場合、その結果を使用するArrangeも必要になります。
+	/// @param invalidation 展開する UI_INVALIDATION フラグ
+	/// @return 展開された UI_INVALIDATION フラグ
+	[[nodiscard]] constexpr UI_INVALIDATION ExpandUiInvalidationDependencies(
+		UI_INVALIDATION invalidation
+	) noexcept {
+		if (HasAnyInvalidation(invalidation, UI_INVALIDATION::MEASURE)) {
+			invalidation |= UI_INVALIDATION::ARRANGE;
+		}
+
+		return invalidation;
 	}
 }

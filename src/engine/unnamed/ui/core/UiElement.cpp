@@ -214,13 +214,17 @@ namespace Unnamed {
 	}
 
 	void UiElement::Invalidate(const UI_INVALIDATION invalidation) {
+		// 無効化状態の依存関係を展開する
+		const UI_INVALIDATION expandedInvalidation =
+			ExpandUiInvalidationDependencies(invalidation);
+
 		// 無効化状態が NONE の場合は何もしない
-		if (invalidation == UI_INVALIDATION::NONE) {
+		if (expandedInvalidation == UI_INVALIDATION::NONE) {
 			return;
 		}
 
 		// すでに無効化されている状態を除外し、新たに無効化された状態を取得する
-		const UI_INVALIDATION newInvalidation = invalidation & ~mInvalidation;
+		const UI_INVALIDATION newInvalidation = expandedInvalidation & ~mInvalidation;
 
 		// 無効化状態がない場合は何もしない
 		if (newInvalidation == UI_INVALIDATION::NONE) {
