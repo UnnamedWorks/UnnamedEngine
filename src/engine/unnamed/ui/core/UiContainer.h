@@ -66,6 +66,26 @@ namespace Unnamed {
 		virtual void OnChildrenChanged() noexcept {
 		}
 
+		/// @brief 子要素が追加された直後に呼び出されます。
+		/// @param child 追加された子要素。
+		/// @param index 追加された子要素のインデックス。
+		virtual void OnChildAdded(
+			UiElement& child, const size_t index
+		) noexcept {
+			static_cast<void>(child);
+			static_cast<void>(index);
+		}
+
+		/// @brief 子要素が削除される直前に呼び出されます。
+		/// @param child 削除される子要素。
+		/// @param index 削除される子要素のインデックス。
+		virtual void OnChildRemoving(
+			UiElement& child, const size_t index
+		) noexcept {
+			static_cast<void>(child);
+			static_cast<void>(index);
+		}
+
 	private:
 		/// @brief 子要素の数を取得します。(UiElement のオーバーライド)
 		/// @return ツリー走査対象の子要素数。

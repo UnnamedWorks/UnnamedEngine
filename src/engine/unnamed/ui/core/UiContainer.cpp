@@ -18,6 +18,7 @@ namespace Unnamed {
 
 		// 親要素が既に存在する場合は追加できない
 		UASSERT(!child->HasParent());
+
 		if (child->HasParent()) {
 			Fatal(
 				kChannel,
@@ -39,9 +40,13 @@ namespace Unnamed {
 
 		UiElement* result = child.get();
 
+		const size_t index = mChildren.size();
+
 		// 子要素を追加し、親要素を設定する
 		mChildren.emplace_back(std::move(child));
 		result->SetParent(this);
+
+		OnChildAdded(*result, index);
 
 		// 子要素の変更を通知する
 		NotifyChildrenChanged();
@@ -63,6 +68,13 @@ namespace Unnamed {
 		if (iterator == mChildren.end()) {
 			return nullptr;
 		}
+
+		const size_t index = static_cast<size_t>(std::distance(
+			mChildren.begin(),
+			iterator
+		));
+
+		OnChildRemoving(child, index);
 
 		std::unique_ptr<UiElement> result = std::move(*iterator);
 
@@ -88,10 +100,16 @@ namespace Unnamed {
 			return;
 		}
 
-		// 子要素の親要素を nullptr に設定して削除する
-		for (const auto& child : mChildren) {
-			child->SetParent(nullptr);
+		// 子要素を逆順に削除することで、インデックスのずれを防ぐ
+		for (size_t count = mChildren.size(); count > 0; --count) {
+			const size_t index = count - 1;
+
+			UiElement& child = *mChildren[index];
+
+			OnChildRemoving(child, index);
+			child.SetParent(nullptr);
 		}
+
 		mChildren.clear();
 
 		// 子要素の変更を通知する

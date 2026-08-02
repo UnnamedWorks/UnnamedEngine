@@ -3,6 +3,8 @@
 
 #include "UiContainer.h"
 
+#include "../utils/UiUtils.h"
+
 namespace Unnamed {
 	namespace {
 		/// @brief Measure() の引数として有効な値かどうかを判定します。
@@ -54,42 +56,6 @@ namespace Unnamed {
 			}
 
 			return size;
-		}
-
-		/// @brief 2つの float が正確に等しいかどうかを判定します。
-		/// @param first 判定する float
-		/// @param second 判定する float
-		/// @return 等しい場合は true、そうでない場合は false
-		[[nodiscard]] bool AreUiFloatsExactlyEqual(
-			const float first, const float second
-		) {
-			if (
-				std::fpclassify(first) == FP_ZERO &&
-				std::fpclassify(second) == FP_ZERO
-			) {
-				return true;
-			}
-
-			return std::bit_cast<uint32_t>(first) ==
-			       std::bit_cast<uint32_t>(second);
-		}
-
-		/// @brief 2つの Vec2 が正確に等しいかどうかを判定します。
-		/// @param first 判定する Vec2
-		/// @param second 判定する Vec2
-		/// @return 等しい場合は true、そうでない場合は false
-		[[nodiscard]] bool AreUiVectorsExactlyEqual(
-			const Vec2& first, const Vec2& second
-		) noexcept {
-			return AreUiFloatsExactlyEqual(first.x, second.x) &&
-			       AreUiFloatsExactlyEqual(first.y, second.y);
-		}
-
-		[[nodiscard]] bool AreUiRectsExactlyEqual(
-			const UiRect& first, const UiRect& second
-		) noexcept {
-			return AreUiVectorsExactlyEqual(first.pos, second.pos) &&
-			       AreUiVectorsExactlyEqual(first.size, second.size);
 		}
 
 		[[nodiscard]] UiRect SanitizeArrangeRect(UiRect rect) noexcept {
