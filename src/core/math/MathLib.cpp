@@ -7,7 +7,9 @@ namespace Math {
 		return a * (1.0f - t) + b * t;
 	}
 
-	bool Equal(const float lhs, const float rhs, const float tolerance) noexcept {
+	bool Equal(
+		const float lhs, const float rhs, const float tolerance
+	) noexcept {
 		// NaN または Inf の場合は等しくないと判定する
 		if (std::isnan(lhs) || std::isnan(rhs)) {
 			return false;
@@ -20,6 +22,20 @@ namespace Math {
 		}
 
 		return std::abs(lhs - rhs) <= tolerance;
+	}
+
+	[[nodiscard]] bool ExactlyEqual(
+		const float first, const float second
+	) noexcept {
+		if (
+			std::fpclassify(first) == FP_ZERO &&
+			std::fpclassify(second) == FP_ZERO
+		) {
+			return true;
+		}
+
+		return std::bit_cast<uint32_t>(first) ==
+		       std::bit_cast<uint32_t>(second);
 	}
 
 	float DeltaAngle(const float current, const float target) {

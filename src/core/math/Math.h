@@ -36,6 +36,12 @@ namespace Math {
 		float lhs, float rhs, float tolerance = 1.0e-4f
 	) noexcept;
 
+	/// @brief 2つの float が正確に等しいかどうかを判定します。
+	/// @param first 判定する float
+	/// @param second 判定する float
+	/// @return 等しい場合は true、そうでない場合は false
+	[[nodiscard]] bool ExactlyEqual(float first, float second) noexcept;
+
 	/// @brief 2つの角度の最短符号付き差分を計算します。
 	/// @param current 現在の角度 [rad]
 	/// @param target 目標の角度 [rad]
