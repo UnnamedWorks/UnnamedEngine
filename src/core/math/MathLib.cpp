@@ -7,10 +7,21 @@ namespace Math {
 		return a * (1.0f - t) + b * t;
 	}
 
-	/// @brief 角度の差を計算します
-	/// @param current 現在の角度 [rad]
-	/// @param target 目標の角度 [rad]
-	/// @return 角度の差 [rad]
+	bool Equal(const float lhs, const float rhs, const float tolerance) noexcept {
+		// NaN または Inf の場合は等しくないと判定する
+		if (std::isnan(lhs) || std::isnan(rhs)) {
+			return false;
+		}
+
+		if (std::isinf(lhs) || std::isinf(rhs)) {
+			return std::isinf(lhs) &&
+			       std::isinf(rhs) &&
+			       std::signbit(lhs) == std::signbit(rhs);
+		}
+
+		return std::abs(lhs - rhs) <= tolerance;
+	}
+
 	float DeltaAngle(const float current, const float target) {
 		float delta = std::fmod(target - current, 2.0f * pi);
 		if (delta > pi) {
@@ -33,11 +44,6 @@ namespace Math {
 		return delta;
 	}
 
-	/// @brief 3次ベジェ曲線を計算します
-	/// @param t 補間係数 (0.0 ~ 1.0)
-	/// @param p1 制御点1
-	/// @param p2 制御点2
-	/// @return ベジェ曲線の値
 	float CubicBezier(const float t, const Vec2 p1, const Vec2 p2) {
 		if (t <= 0.0f) {
 			return 0.0f;
@@ -74,13 +80,6 @@ namespace Math {
 		return bezierY;
 	}
 
-	/// @brief 3次ベジェ曲線を計算します
-	/// @param t 補間係数 (0.0 ~ 1.0)
-	/// @param p1 制御点1のx成分
-	/// @param p2 制御点1のy成分
-	/// @param p3 制御点2のx成分
-	/// @param p4 制御点2のy成分
-	/// @return ベジェ曲線の値
 	float CubicBezier(
 		const float t,
 		const float p1, const float p2,
@@ -89,16 +88,12 @@ namespace Math {
 		return CubicBezier(t, Vec2(p1, p2), Vec2(p3, p4));
 	}
 
-	/// @brief 線形補間を行います
-	/// @param a 開始値
-	/// @param b 終了値
-	/// @param t 補間係数 (0.0 ~ 1.0)
 	Vec2 Lerp(const Vec2& a, const Vec2& b, const float t) {
 		return a * (1.0f - t) + b * t;
 	}
 
 	/// TODO: 使えるように修正
-	/// @brief ワールド座標をスクリーン座標と画面中心からの角度に変換します 
+	/// @brief ワールド座標をスクリーン座標と画面中心からの角度に変換します
 	/// @param worldPos 変換するワールド座標
 	/// @param screenSize 画面サイズ
 	/// @param bClamp 画面外の座標を画面端にクランプするか?
@@ -207,36 +202,19 @@ namespace Math {
 		// return screenPos;
 	}
 
-	/// @brief ベクトルを平面に投影します
-	/// @param vector 投影するベクトル
-	/// @param normal 平面の法線ベクトル
-	/// @return 投影後のベクトル
 	Vec3 ProjectOnPlane(const Vec3& vector, const Vec3& normal) {
 		return vector - normal * vector.Dot(normal);
 	}
 
-	/// @brief 地面の法線に基づいて移動方向を取得します
-	/// @param forward 移動したい方向のベクトル
-	/// @param groundNormal 地面の法線ベクトル
-	/// @return 地面に沿った移動方向のベクトル
 	Vec3 GetMoveDirection(const Vec3& forward, const Vec3& groundNormal) {
 		const Vec3 projectedForward = ProjectOnPlane(forward, groundNormal);
 		return projectedForward.Normalized();
 	}
 
-	/// @brief 線形補間を行います
-	/// @param a 開始値
-	/// @param b 終了値
-	/// @param t 補間係数 (0.0 ~ 1.0)
-	/// @return 補間結果
 	Vec3 Lerp(const Vec3& a, const Vec3& b, const float t) {
 		return a * (1.0f - t) + b * t;
 	}
 
-	/// @brief 各成分ごとの最小値を取得します
-	/// @param a ベクトルA
-	/// @param b ベクトルB
-	/// @return 各成分ごとの最小値を持つベクトル
 	Vec3 Min(const Vec3 a, const Vec3 b) {
 		return {
 			std::min(a.x, b.x),
@@ -245,10 +223,6 @@ namespace Math {
 		};
 	}
 
-	/// @brief 各成分ごとの最大値を取得します
-	/// @param a ベクトルA
-	/// @param b ベクトルB
-	/// @return 各成分ごとの最大値を持つベクトル
 	Vec3 Max(const Vec3 a, const Vec3 b) {
 		return {
 			std::max(a.x, b.x),
@@ -257,39 +231,22 @@ namespace Math {
 		};
 	}
 
-	/// @brief 線形補間を行います
-	/// @param a 開始値
-	/// @param b 終了値
-	/// @param t 補間係数 (0.0 ~ 1.0)
-	/// @return 補間結果
 	Vec4 Lerp(const Vec4& a, const Vec4& b, const float t) {
 		return a * (1.0f - t) + b * t;
 	}
 
-	/// @brief インチをメートルに変換します
-	/// @param vec 変換するベクトル
-	/// @return 変換後のベクトル
 	Vec3 HtoM(const Vec3& vec) {
 		return vec * 0.0254f;
 	}
 
-	/// @brief インチをメートルに変換します
-	/// @param val 変換する値
-	/// @return 変換後の値
 	float HtoM(const float val) {
 		return val * 0.0254f;
 	}
 
-	/// @brief メートルをインチに変換します
-	/// @param vec 変換するベクトル
-	/// @return 変換後のベクトル
 	Vec3 MtoH(const Vec3& vec) {
 		return vec * 39.3701f;
 	}
 
-	/// @brief メートルをインチに変換します
-	/// @param val 変換する値
-	/// @return 変換後の値
 	float MtoH(const float val) {
 		return val * 39.3701f;
 	}
