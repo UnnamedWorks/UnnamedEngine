@@ -11,14 +11,14 @@ namespace Unnamed {
 	class UiElement {
 	public:
 		// コンストラクタ・デストラクタ
-		UiElement()			 = default;
+		UiElement()          = default;
 		virtual ~UiElement() = default;
 
 		// コピー・ムーブ禁止
-		UiElement(const UiElement&)			   = delete;
+		UiElement(const UiElement&)            = delete;
 		UiElement& operator=(const UiElement&) = delete;
-		UiElement(UiElement&&)				   = delete;
-		UiElement& operator=(UiElement&&)	   = delete;
+		UiElement(UiElement&&)                 = delete;
+		UiElement& operator=(UiElement&&)      = delete;
 
 		/// @brief 親要素を取得します。
 		/// @return 親要素のポインタ。親要素が存在しない場合は nullptr
@@ -91,6 +91,15 @@ namespace Unnamed {
 		[[nodiscard]] bool
 		IsInvalidated(UI_INVALIDATION invalidation) const noexcept;
 
+		/// @brief 利用可能なサイズから、この要素が必要とするサイズを計算します。
+		/// @param availableSize 親から与えられた利用可能サイズ。
+		/// @return この要素が希望するサイズ。
+		[[nodiscard]] Vec2 Measure(const Vec2& availableSize);
+
+		/// @brief 最後に計算された希望サイズを取得します。
+		/// @return 最後に計算された希望サイズ。
+		[[nodiscard]] const Vec2& GetDesiredSize() const noexcept;
+
 	protected:
 		/// @brief UI要素固有の更新処理を実行します。
 		/// @param context 現在のフレーム情報。
@@ -102,7 +111,8 @@ namespace Unnamed {
 		/// @param oldParent 変更前の親要素のポインタ。
 		/// @param newParent 変更後の親要素のポインタ。
 		virtual void OnParentChanged(
-			UiContainer* oldParent, UiContainer* newParent) noexcept {
+			UiContainer* oldParent, UiContainer* newParent
+		) noexcept {
 			static_cast<void>(oldParent);
 			static_cast<void>(newParent);
 		}
@@ -112,7 +122,8 @@ namespace Unnamed {
 		/// @param newVisibility 変更後の表示状態
 		virtual void OnVisibilityChanged(
 			const UI_VISIBILITY oldVisibility,
-			const UI_VISIBILITY newVisibility) {
+			const UI_VISIBILITY newVisibility
+		) {
 			static_cast<void>(oldVisibility);
 			static_cast<void>(newVisibility);
 		}
@@ -120,8 +131,9 @@ namespace Unnamed {
 		/// @brief 有効状態が変更されたときに呼び出されます。
 		/// @param oldEnabled 変更前の有効状態
 		/// @param newEnabled 変更後の有効状態
-		virtual void
-		OnEnabledChanged(const bool oldEnabled, const bool newEnabled) {
+		virtual void OnEnabledChanged(
+			const bool oldEnabled, const bool newEnabled
+		) {
 			static_cast<void>(oldEnabled);
 			static_cast<void>(newEnabled);
 		}
@@ -130,7 +142,8 @@ namespace Unnamed {
 		/// @param oldHitTestVisible 変更前のヒットテスト対象状態
 		/// @param newHitTestVisible 変更後のヒットテスト対象状態
 		virtual void OnHitTestVisibleChanged(
-			const bool oldHitTestVisible, const bool newHitTestVisible) {
+			const bool oldHitTestVisible, const bool newHitTestVisible
+		) {
 			static_cast<void>(oldHitTestVisible);
 			static_cast<void>(newHitTestVisible);
 		}
@@ -138,8 +151,9 @@ namespace Unnamed {
 		/// @brief 不透明度が変更されたときに呼び出されます。
 		/// @param oldOpacity 変更前の不透明度
 		/// @param newOpacity 変更後の不透明度
-		virtual void
-		OnOpacityChanged(const float oldOpacity, const float newOpacity) {
+		virtual void OnOpacityChanged(
+			const float oldOpacity, const float newOpacity
+		) {
 			static_cast<void>(oldOpacity);
 			static_cast<void>(newOpacity);
 		}
@@ -153,6 +167,10 @@ namespace Unnamed {
 		virtual void OnInvalidated(const UI_INVALIDATION newInvalidation) {
 			static_cast<void>(newInvalidation);
 		}
+
+		/// @brief UI要素の希望サイズを計算します。
+		/// @param availableSize 親から与えられた利用可能サイズ。
+		[[nodiscard]] virtual Vec2 OnMeasure(const Vec2& availableSize);
 
 	private:
 		friend class UiContainer;
@@ -176,12 +194,17 @@ namespace Unnamed {
 
 		UiContainer* mParent = nullptr; // 親コンテナへのポインタ
 
+		Vec2 mDesiredSize              = Vec2::zero; // 希望サイズ
+		Vec2 mLastMeasureAvailableSize = Vec2::zero; // 最後に計算された利用可能サイズ
+
 		float mOpacity = 1.0f; // 不透明度
 
-		UI_VISIBILITY	mVisibility	  = UI_VISIBILITY::VISIBLE; // 表示状態
-		UI_INVALIDATION mInvalidation = UI_INVALIDATION::ALL;	//
+		UI_VISIBILITY   mVisibility   = UI_VISIBILITY::VISIBLE; // 表示状態
+		UI_INVALIDATION mInvalidation = UI_INVALIDATION::ALL;   // 無効化状態
 
-		bool mEnabled		 = true; // 有効状態
-		bool mHitTestVisible = true; // ヒットテスト対象か?
+		bool mEnabled          = true;  // 有効状態
+		bool mHitTestVisible   = true;  // ヒットテスト対象か?
+		bool mHasMeasureResult = false; // Measure() が呼ばれたか?
+		bool mIsMeasuring      = false; // Measure() の実行中か?
 	};
 } // namespace Unnamed

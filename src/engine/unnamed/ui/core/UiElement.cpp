@@ -4,6 +4,69 @@
 #include "UiContainer.h"
 
 namespace Unnamed {
+	namespace {
+		/// @brief Measure() の引数として有効な値かどうかを判定します。
+		/// @param value 判定する値
+		/// @return 有効な値の場合は true、無効な値の場合は false
+		[[nodiscard]] bool IsValidMeasureAxis(const float value) noexcept {
+			return !std::isnan(value) && value >= 0.0f;
+		}
+
+		/// @brief Measure() の引数として有効な Vec2 かどうかを判定します。
+		/// @param size 判定する Vec2
+		/// @return 有効な Vec2 の場合は true、無効な Vec2 の場合は false
+		[[nodiscard]] bool IsValidMeasureConstraint(const Vec2& size) noexcept {
+			return IsValidMeasureAxis(size.x) && IsValidMeasureAxis(size.y);
+		}
+
+		/// @brief Measure() の引数として有効な Vec2 に変換します。
+		/// @param size 変換する Vec2
+		/// @return 有効な Vec2 に変換された結果
+		[[nodiscard]] Vec2 SanitizeMeasureConstraint(Vec2 size) noexcept {
+			if (!IsValidMeasureAxis(size.x)) {
+				size.x = 0.0f;
+			}
+
+			if (!IsValidMeasureAxis(size.y)) {
+				size.y = 0.0f;
+			}
+
+			return size;
+		}
+
+		/// @brief Measure() の結果として有効な Vec2 かどうかを判定します。
+		/// @param size 判定する Vec2
+		/// @return 有効な Vec2 の場合は true、無効な Vec2 の場合は false
+		[[nodiscard]] bool IsValidDesiredSize(const Vec2& size) noexcept {
+			return size.IsValid() && size.x >= 0.0f && size.y >= 0.0f;
+		}
+
+		/// @brief Measure() の結果として有効な Vec2 に変換します。
+		/// @param size 変換する Vec2
+		/// @return 有効な Vec2 に変換された結果
+		[[nodiscard]] Vec2 SanitizeDesiredSize(Vec2 size) noexcept {
+			if (!std::isfinite(size.x) || size.x < 0.0f) {
+				size.x = 0.0f;
+			}
+
+			if (!std::isfinite(size.y) || size.y < 0.0f) {
+				size.y = 0.0f;
+			}
+
+			return size;
+		}
+
+		/// @brief Measure() の引数として渡された2つの Vec2 が等しいかどうかを判定します。
+		/// @param a 判定する Vec2
+		/// @param b 判定する Vec2
+		/// @return 等しい場合は true、そうでない場合は false
+		[[nodiscard]] bool AreMeasureConstraintsEqual(
+			const Vec2& a, const Vec2& b
+		) {
+			return Math::Equal(a.x, b.x) && Math::Equal(a.y, b.y);
+		}
+	}
+
 	UiContainer* UiElement::GetParent() noexcept {
 		return mParent;
 	}
@@ -195,10 +258,85 @@ namespace Unnamed {
 		return HasAnyInvalidation(mInvalidation, invalidation);
 	}
 
+	Vec2 UiElement::Measure(const Vec2& availableSize) {
+		// 有効な値かどうかを判定する
+		UASSERT(
+			IsValidMeasureConstraint(availableSize) &&
+			"UI measure constraint must be non-negative and not NaN."
+		);
+
+		// 有効な Vec2 に変換する
+		const Vec2 sanitizedAvailableSize = SanitizeMeasureConstraint(
+			availableSize
+		);
+
+		// 前回と同じかどうかを判定する
+		const bool constraintChanged =
+			!mHasMeasureResult ||
+			!AreMeasureConstraintsEqual(
+				mLastMeasureAvailableSize,
+				sanitizedAvailableSize
+			);
+
+		// 前回と同じで、MEASURE フラグが設定されていない場合は、前回の希望サイズを返す
+		if (!constraintChanged && !IsInvalidated(UI_INVALIDATION::MEASURE)) {
+			return mDesiredSize;
+		}
+
+		UASSERT(
+			!mIsMeasuring &&
+			"Recursive Measure() call detected on the same UI element."
+		);
+
+		// Measure() の実行中の場合は、前回の希望サイズを返す
+		if (mIsMeasuring) {
+			return mDesiredSize;
+		}
+
+		mIsMeasuring = true;
+
+		// 利用可能サイズを保存する
+		mLastMeasureAvailableSize = sanitizedAvailableSize;
+
+		// OnMeasure() の呼び出し中に再度Measureが無効化された場合、その状態を消さないよう呼び出し前に解除する。
+		ClearInvalidation(UI_INVALIDATION::MEASURE);
+
+		Vec2 desiredSize;
+
+		// 表示状態が COLLAPSED の場合は、希望サイズを (0, 0) にする
+		if (mVisibility == UI_VISIBILITY::COLLAPSED) {
+			desiredSize = Vec2::zero;
+		} else {
+			desiredSize = OnMeasure(sanitizedAvailableSize);
+
+			UASSERT(
+				IsValidDesiredSize(desiredSize) &&
+				"UI desired size must be finite and non-negative."
+			);
+
+			desiredSize = SanitizeDesiredSize(desiredSize);
+		}
+
+		mDesiredSize      = desiredSize;
+		mHasMeasureResult = true;
+		mIsMeasuring      = false;
+
+		return mDesiredSize;
+	}
+
+	const Vec2& UiElement::GetDesiredSize() const noexcept {
+		return mDesiredSize;
+	}
+
 	void UiElement::ClearInvalidation(
 		const UI_INVALIDATION invalidation
 	) noexcept {
 		mInvalidation &= ~invalidation;
+	}
+
+	Vec2 UiElement::OnMeasure(const Vec2& availableSize) {
+		static_cast<void>(availableSize);
+		return Vec2::zero;
 	}
 
 	void UiElement::SetParent(UiContainer* parent) noexcept {
