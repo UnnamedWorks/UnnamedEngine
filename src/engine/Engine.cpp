@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
+#include <xaudio2.h>
 
 // ReSharper disable CppUnusedIncludeDirective
 #include <engine/physics/core/Physics.h>
@@ -59,6 +60,12 @@
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/world/World.h>
+
+#include "unnamed/ui/tests/UiElementStateTests.h"
+#include "unnamed/ui/tests/UiGeometryTests.h"
+#include "unnamed/ui/tests/UiInvalidationTests.h"
+#include "unnamed/ui/tests/UiOwnershipTests.h"
+#include "unnamed/ui/tests/UiTreeTests.h"
 
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 #include <engine/editor/EditorRuntime.h>
@@ -193,6 +200,16 @@ namespace Unnamed {
 			Error("Engine", "Failed to initialize Engine.");
 			Shutdown();
 			return EXIT_FAILURE;
+		}
+
+		// 新Uiのテスト
+		{
+			RunUiOwnershipTests();
+			RunUiTreeTests();
+			RunUiElementStateTests();
+			RunUiGeometryTests();
+			RunUiInvalidationTests();
+			Msg("Engine", "All UI core tests passed.");
 		}
 
 		if (callbacks.onPostInitialize && !callbacks.onPostInitialize(*this)) {
