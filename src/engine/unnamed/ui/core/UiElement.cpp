@@ -34,14 +34,14 @@ namespace Unnamed {
 			return size;
 		}
 
-		/// @brief Measure() の結果として有効な Vec2 かどうかを判定します。
+		/// @brief 有効な Vec2 かどうかを判定します。
 		/// @param size 判定する Vec2
 		/// @return 有効な Vec2 の場合は true、無効な Vec2 の場合は false
 		[[nodiscard]] bool IsValidDesiredSize(const Vec2& size) noexcept {
 			return size.IsValid() && size.x >= 0.0f && size.y >= 0.0f;
 		}
 
-		/// @brief Measure() の結果として有効な Vec2 に変換します。
+		/// @brief 有効な Vec2 に変換します。
 		/// @param size 変換する Vec2
 		/// @return 有効な Vec2 に変換された結果
 		[[nodiscard]] Vec2 SanitizeDesiredSize(Vec2 size) noexcept {
@@ -56,14 +56,56 @@ namespace Unnamed {
 			return size;
 		}
 
-		/// @brief Measure() の引数として渡された2つの Vec2 が等しいかどうかを判定します。
-		/// @param a 判定する Vec2
-		/// @param b 判定する Vec2
+		/// @brief 2つの float が正確に等しいかどうかを判定します。
+		/// @param first 判定する float
+		/// @param second 判定する float
 		/// @return 等しい場合は true、そうでない場合は false
-		[[nodiscard]] bool AreMeasureConstraintsEqual(
-			const Vec2& a, const Vec2& b
+		[[nodiscard]] bool AreUiFloatsExactlyEqual(
+			const float first, const float second
 		) {
-			return Math::Equal(a.x, b.x) && Math::Equal(a.y, b.y);
+			if (
+				std::fpclassify(first) == FP_ZERO &&
+				std::fpclassify(second) == FP_ZERO
+			) {
+				return true;
+			}
+
+			return std::bit_cast<uint32_t>(first) ==
+			       std::bit_cast<uint32_t>(second);
+		}
+
+		/// @brief 2つの Vec2 が正確に等しいかどうかを判定します。
+		/// @param first 判定する Vec2
+		/// @param second 判定する Vec2
+		/// @return 等しい場合は true、そうでない場合は false
+		[[nodiscard]] bool AreUiVectorsExactlyEqual(
+			const Vec2& first, const Vec2& second
+		) noexcept {
+			return AreUiFloatsExactlyEqual(first.x, second.x) &&
+			       AreUiFloatsExactlyEqual(first.y, second.y);
+		}
+
+		[[nodiscard]] bool AreUiRectsExactlyEqual(
+			const UiRect& first, const UiRect& second
+		) noexcept {
+			return AreUiVectorsExactlyEqual(first.pos, second.pos) &&
+			       AreUiVectorsExactlyEqual(first.size, second.size);
+		}
+
+		[[nodiscard]] UiRect SanitizeArrangeRect(UiRect rect) noexcept {
+			constexpr int vec2ElementCount = 2;
+
+			for (int i = 0; i < vec2ElementCount; ++i) {
+				if (!std::isfinite(rect.pos[i])) {
+					rect.pos[i] = 0.0f;
+				}
+
+				if (!std::isfinite(rect.size[i]) || rect.size[i] < 0.0f) {
+					rect.size[i] = 0.0f;
+				}
+			}
+
+			return rect;
 		}
 	}
 
@@ -273,7 +315,7 @@ namespace Unnamed {
 		// 前回と同じかどうかを判定する
 		const bool constraintChanged =
 			!mHasMeasureResult ||
-			!AreMeasureConstraintsEqual(
+			!AreUiVectorsExactlyEqual(
 				mLastMeasureAvailableSize,
 				sanitizedAvailableSize
 			);
@@ -326,6 +368,91 @@ namespace Unnamed {
 
 	const Vec2& UiElement::GetDesiredSize() const noexcept {
 		return mDesiredSize;
+	}
+
+	void UiElement::Arrange(const UiRect& finalRect) {
+		// 有効な矩形かどうかを判定する
+		UASSERT(
+			finalRect.IsValid() &&
+			"UI arrange rectangle must be finite and have a non-negative size."
+		);
+
+		// 有効な矩形に変換する
+		const UiRect sanitizedFinalRect = SanitizeArrangeRect(finalRect);
+
+		// 前回と同じかどうかを判定する
+		const bool arrangeConstraintChanged =
+			!mHasArrangeResult ||
+			!AreUiRectsExactlyEqual(
+				mLastArrangeRect,
+				sanitizedFinalRect
+			);
+
+		// 前回と同じで、ARRANGE フラグが設定されていない場合は、何もしない
+		if (
+			!arrangeConstraintChanged &&
+			!IsInvalidated(UI_INVALIDATION::ARRANGE)
+		) {
+			return;
+		}
+
+		// 再帰的な Arrange() 呼び出しを検出する
+		UASSERT(
+			!mIsArranging &&
+			"Recursive Arrange() call detected on the same UI element."
+		);
+
+		// Arrange() の実行中の場合は、何もしない
+		if (mIsArranging) {
+			return;
+		}
+
+		// Arrange() の実行中であることを示すフラグを設定する
+		mIsArranging = true;
+
+		const bool hadArrangeResult = mHasArrangeResult;
+
+		mLastArrangeRect = sanitizedFinalRect;
+
+		// Arrange() の呼び出し中に再度 Arrange が無効化された場合、その状態を消さないよう呼び出し前に解除する。
+		ClearInvalidation(UI_INVALIDATION::ARRANGE);
+
+		UiRect arrangeRect = sanitizedFinalRect;
+
+		// 表示状態が COLLAPSED の場合は、サイズを (0, 0) にする
+		if (mVisibility == UI_VISIBILITY::COLLAPSED) {
+			arrangeRect.size = Vec2::zero;
+		}
+
+		// 前回の配置矩形と異なる場合は、無効化状態を更新する
+		const bool layoutRectChanged =
+			!hadArrangeResult || !AreUiRectsExactlyEqual(
+				mLayoutRect,
+				arrangeRect
+			);
+
+		mLayoutRect       = arrangeRect;
+		mHasArrangeResult = true;
+
+		// 配置矩形が変更された場合は、無効化状態を更新する
+		if (layoutRectChanged) {
+			Invalidate(
+				UI_INVALIDATION::TRANSFORM | UI_INVALIDATION::PAINT |
+				UI_INVALIDATION::HIT_TEST
+			);
+		}
+
+		// 表示状態が COLLAPSED でない場合は、OnArrange() を呼び出す
+		if (mVisibility != UI_VISIBILITY::COLLAPSED) {
+			OnArrange(mLayoutRect);
+		}
+
+		// Arrange() の実行中であることを示すフラグを解除する
+		mIsArranging = false;
+	}
+
+	const UiRect& UiElement::GetLayoutRect() const noexcept {
+		return mLayoutRect;
 	}
 
 	void UiElement::ClearInvalidation(

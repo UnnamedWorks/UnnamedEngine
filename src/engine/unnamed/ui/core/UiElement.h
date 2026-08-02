@@ -2,6 +2,8 @@
 #include "UiInvalidation.h"
 #include "UiVisibility.h"
 
+#include "../geometry/UiGeometry.h"
+
 namespace Unnamed {
 	class UiContainer;
 	class UiTree;
@@ -100,6 +102,15 @@ namespace Unnamed {
 		/// @return 最後に計算された希望サイズ。
 		[[nodiscard]] const Vec2& GetDesiredSize() const noexcept;
 
+		/// @brief 親から与えられた最終的な矩形に要素を配置します。
+		/// @param finalRect 親から与えられた最終的な矩形。
+		void Arrange(const UiRect& finalRect);
+
+		/// @brief 確定した配置矩形を取得します。
+		/// @note Collapsedの場合、位置は保持されますが、サイズは0になります。
+		/// @return 確定した配置矩形。
+		[[nodiscard]] const UiRect& GetLayoutRect() const noexcept;
+
 	protected:
 		/// @brief UI要素固有の更新処理を実行します。
 		/// @param context 現在のフレーム情報。
@@ -172,6 +183,12 @@ namespace Unnamed {
 		/// @param availableSize 親から与えられた利用可能サイズ。
 		[[nodiscard]] virtual Vec2 OnMeasure(const Vec2& availableSize);
 
+		/// @brief 固有の配置処理を実行します。
+		/// @note コンテナ系の派生クラスは、この関数内で子要素のArrange()を呼び出します。
+		virtual void OnArrange(const UiRect& finalRect) {
+			static_cast<void>(finalRect);
+		}
+
 	private:
 		friend class UiContainer;
 		friend class UiTree;
@@ -194,6 +211,9 @@ namespace Unnamed {
 
 		UiContainer* mParent = nullptr; // 親コンテナへのポインタ
 
+		UiRect mLayoutRect      = {}; // 確定した配置矩形
+		UiRect mLastArrangeRect = {}; // 最後に計算された配置矩形
+
 		Vec2 mDesiredSize              = Vec2::zero; // 希望サイズ
 		Vec2 mLastMeasureAvailableSize = Vec2::zero; // 最後に計算された利用可能サイズ
 
@@ -206,5 +226,7 @@ namespace Unnamed {
 		bool mHitTestVisible   = true;  // ヒットテスト対象か?
 		bool mHasMeasureResult = false; // Measure() が呼ばれたか?
 		bool mIsMeasuring      = false; // Measure() の実行中か?
+		bool mHasArrangeResult = false; // Arrange() が呼ばれたか?
+		bool mIsArranging      = false; // Arrange() の実行中か?
 	};
 } // namespace Unnamed
