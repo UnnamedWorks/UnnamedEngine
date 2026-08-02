@@ -61,6 +61,7 @@
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/world/World.h>
 
+#include "unnamed/ui/tests/UiAbsolutePanelTests.h"
 #include "unnamed/ui/tests/UiArrangeTests.h"
 #include "unnamed/ui/tests/UiElementStateTests.h"
 #include "unnamed/ui/tests/UiGeometryTests.h"
@@ -213,6 +214,7 @@ namespace Unnamed {
 			RunUiInvalidationTests();
 			RunUiMeasureTests();
 			RunUiArrangeTests();
+			RunUiAbsolutePanelTests();
 			Msg("Engine", "All UI core tests passed.");
 		}
 
