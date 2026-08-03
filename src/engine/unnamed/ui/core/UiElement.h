@@ -111,6 +111,14 @@ namespace Unnamed {
 		/// @return 確定した配置矩形。
 		[[nodiscard]] const UiRect& GetLayoutRect() const noexcept;
 
+		/// @brief ワールド座標系における配置矩形を取得します。
+		/// @return ワールド座標系における配置矩形。
+		[[nodiscard]] const UiRect& GetWorldRect() const noexcept;
+
+		/// @brief ワールド矩形が計算済みか判定します。
+		/// @return ワールド矩形が計算済みの場合はtrue、そうでない場合はfalse。
+		[[nodiscard]] bool HasWorldRect() const noexcept;
+
 	protected:
 		/// @brief UI要素固有の更新処理を実行します。
 		/// @param context 現在のフレーム情報。
@@ -189,6 +197,16 @@ namespace Unnamed {
 			static_cast<void>(finalRect);
 		}
 
+		/// @brief ワールド矩形が変化した際に呼び出されます。
+		/// @param oldWorldRect 変更前のワールド矩形
+		/// @param newWorldRect 変更後のワールド矩形
+		virtual void OnWorldRectChanged(
+			const UiRect& oldWorldRect, const UiRect& newWorldRect
+		) {
+			static_cast<void>(oldWorldRect);
+			static_cast<void>(newWorldRect);
+		}
+
 	private:
 		friend class UiContainer;
 		friend class UiTree;
@@ -213,6 +231,7 @@ namespace Unnamed {
 
 		UiRect mLayoutRect      = {}; // 確定した配置矩形
 		UiRect mLastArrangeRect = {}; // 最後に計算された配置矩形
+		UiRect mWorldRect       = {}; // ワールド矩形
 
 		Vec2 mDesiredSize              = Vec2::zero; // 希望サイズ
 		Vec2 mLastMeasureAvailableSize = Vec2::zero; // 最後に計算された利用可能サイズ
@@ -228,5 +247,6 @@ namespace Unnamed {
 		bool mIsMeasuring      = false; // Measure() の実行中か?
 		bool mHasArrangeResult = false; // Arrange() が呼ばれたか?
 		bool mIsArranging      = false; // Arrange() の実行中か?
+		bool mHasWorldRect     = false; // ワールド矩形が計算済みか?
 	};
 } // namespace Unnamed

@@ -224,7 +224,8 @@ namespace Unnamed {
 		}
 
 		// すでに無効化されている状態を除外し、新たに無効化された状態を取得する
-		const UI_INVALIDATION newInvalidation = expandedInvalidation & ~mInvalidation;
+		const UI_INVALIDATION newInvalidation =
+			expandedInvalidation & ~mInvalidation;
 
 		// 無効化状態がない場合は何もしない
 		if (newInvalidation == UI_INVALIDATION::NONE) {
@@ -423,6 +424,16 @@ namespace Unnamed {
 
 	const UiRect& UiElement::GetLayoutRect() const noexcept {
 		return mLayoutRect;
+	}
+
+	const UiRect& UiElement::GetWorldRect() const noexcept {
+		UASSERT(mHasWorldRect && "UI world rectangle has not been calculated.");
+
+		return mWorldRect;
+	}
+
+	bool UiElement::HasWorldRect() const noexcept {
+		return mHasWorldRect;
 	}
 
 	void UiElement::ClearInvalidation(

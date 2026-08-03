@@ -69,6 +69,7 @@
 #include "unnamed/ui/tests/UiMeasureTests.h"
 #include "unnamed/ui/tests/UiOwnershipTests.h"
 #include "unnamed/ui/tests/UiRootTests.h"
+#include "unnamed/ui/tests/UiTransformTests.h"
 #include "unnamed/ui/tests/UiTreeTests.h"
 
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
@@ -217,6 +218,7 @@ namespace Unnamed {
 			RunUiArrangeTests();
 			RunUiAbsolutePanelTests();
 			RunUiRootTests();
+			RunUiTransformTests();
 			Msg("Engine", "All UI core tests passed.");
 		}
 
