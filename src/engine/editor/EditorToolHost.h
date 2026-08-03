@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include <engine/unnamed/ui/core/UiRoot.h>
+
 #include "sequence/SequenceEditorController.h"
 #include "engine/world/EditorWorld.h"
 #include "IEditorTool.h"
@@ -46,7 +48,11 @@ namespace Unnamed {
 		void Initialize();
 		void Shutdown();
 		void BeginUI() const;
-		void Tick(const EditorToolFrameContext& frameContext) const;
+		void Tick(const EditorToolFrameContext& frameContext);
+
+		// WIP: 新UI
+		void UpdateUI(const EditorToolFrameContext& frameContext);
+
 		void BuildUi(const EditorToolFrameContext& frameContext);
 		void CollectRenderViews(Render::RenderFrameInputs& inputs) const;
 		void SyncViewOutputs() const;
@@ -77,6 +83,8 @@ namespace Unnamed {
 		std::unique_ptr<class EditorNotification>   mNotification;
 		std::unique_ptr<class EditorLuaSystem>      mEditorLuaSystem;
 		std::unique_ptr<class EditorGuiScriptPanel> mEditorGuiScriptPanel;
+
+		UiRoot mUiRoot;
 
 		bool mMainDockInitialized = false;
 		bool mShowAbout           = false;

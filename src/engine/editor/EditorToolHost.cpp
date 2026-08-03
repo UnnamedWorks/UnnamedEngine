@@ -6,6 +6,10 @@
 
 #include <core/string/StrUtil.h>
 
+#include <engine/platform/WindowManager.h>
+#include <engine/unnamed/ui/core/UiTree.h>
+#include <engine/unnamed/ui/core/UiUpdateContext.h>
+
 #include "engine/editor/EditorGuiScriptPanel.h"
 #include "engine/editor/EditorNotification.h"
 #include "engine/editor/GuiEditorTool.h"
@@ -41,7 +45,8 @@ namespace Unnamed {
 	    mProfiler(profiler) {
 		if (!mConsole) {
 			Error(
-				kChannel, "ConsoleSystemが見つかりませんでした。エディタツールホストは正しく動作しません。"
+				kChannel,
+				"ConsoleSystemが見つかりませんでした。エディタツールホストは正しく動作しません。"
 			);
 		}
 
@@ -80,7 +85,8 @@ namespace Unnamed {
 		mEditorGuiScriptPanel = std::make_unique<EditorGuiScriptPanel>();
 		if (mEditorGuiScriptPanel) {
 			mEditorGuiScriptPanel->Initialize(
-				mAssetManager, mEditorLuaSystem.get()
+				mAssetManager,
+				mEditorLuaSystem.get()
 			);
 
 			mEditorGuiScriptPanel->SetScriptPath(
@@ -95,6 +101,18 @@ namespace Unnamed {
 		);
 
 		mNotification = std::make_unique<EditorNotification>();
+
+		const auto mainWindow = mWindowManager.FindWindowById(
+			mWindowManager.GetMainWindowId()
+		);
+		const auto windowDesc = mainWindow->GetDesc();
+		// 一旦ウィンドウからサイズを取ってくる
+		mUiRoot.SetViewportSize(
+			{
+				static_cast<float>(windowDesc.width),
+				static_cast<float>(windowDesc.height)
+			}
+		);
 	}
 
 	void EditorToolHost::Shutdown() {
@@ -121,12 +139,48 @@ namespace Unnamed {
 
 	void EditorToolHost::Tick(
 		const EditorToolFrameContext& frameContext
-	) const {
-		for (auto& tool : mOwnedTools) {
+	) {
+		for (const auto& tool : mOwnedTools) {
 			if (!tool || !tool->IsOpen()) {
 				continue;
 			}
 			tool->Tick(frameContext);
+		}
+
+		UpdateUI(frameContext);
+	}
+
+	void EditorToolHost::UpdateUI(
+		const EditorToolFrameContext& frameContext
+	) {
+		UiTree::Update(
+			mUiRoot,
+			UiUpdateContext{
+				.deltaTime  = frameContext.deltaTime,
+				.frameIndex = 0
+			}
+		);
+
+		const UiLayoutPassResult layoutResult = mUiRoot.PerformLayout();
+
+		const UiTransformPassResult transformResult = UiTree::UpdateTransforms(
+			mUiRoot
+		);
+
+		if (layoutResult.passCount > 1) {
+			DevMsg(
+				"UI",
+				"UI layout required {} passes.",
+				layoutResult.passCount
+			);
+		}
+
+		if (transformResult.mSkippedUnarrangedCount > 0) {
+			DevMsg(
+				"UI",
+				"{} UI elements were skipped because they were not arranged.",
+				transformResult.mSkippedUnarrangedCount
+			);
 		}
 	}
 
@@ -136,7 +190,8 @@ namespace Unnamed {
 
 		// FramePadding
 		ImGui::PushStyleVar(
-			ImGuiStyleVar_FramePadding, ImVec2(framePadding, framePadding)
+			ImGuiStyleVar_FramePadding,
+			ImVec2(framePadding, framePadding)
 		);
 
 		if (ImGui::BeginMainMenuBar()) {
@@ -152,19 +207,23 @@ namespace Unnamed {
 			{
 				// Text
 				ImGui::PushStyleColor(
-					ImGuiCol_Text, logoColor
+					ImGuiCol_Text,
+					logoColor
 				);
 
 				// 前後にスペースを入れてアイコンをテキストとして表示
 				const std::string iconText =
 					" " + StrUtil::ConvertToUtf8(kIconArrowBack) + " ";
 
-				if (ImGuiWidgets::BeginMainMenu(iconText.c_str(),
-				                                kTitleBarHeight)) {
+				if (ImGuiWidgets::BeginMainMenu(
+					iconText.c_str(),
+					kTitleBarHeight
+				)) {
 					ImGui::PopStyleColor(); // Text
 					if (
 						ImGuiWidgets::MenuItemWithIcon(
-							"About Unnamed", kIconInfo
+							"About Unnamed",
+							kIconInfo
 						)
 					) {
 						mShowAbout = true;
@@ -189,7 +248,8 @@ namespace Unnamed {
 			{
 				if (ImGuiWidgets::BeginMainMenu("Edit", kTitleBarHeight)) {
 					(void)ImGuiWidgets::MenuItemWithIcon(
-						"Settings", kIconSettings
+						"Settings",
+						kIconSettings
 					);
 					ImGui::EndMenu();
 				}
@@ -234,10 +294,16 @@ namespace Unnamed {
 
 			if (mLevelTool) {
 				constexpr auto playColor = ImVec4(
-					0.34f, 0.59f, 0.36f, 1.0f
+					0.34f,
+					0.59f,
+					0.36f,
+					1.0f
 				);
 				constexpr auto stopColor = ImVec4(
-					0.79f, 0.31f, 0.31f, 1.0f
+					0.79f,
+					0.31f,
+					0.31f,
+					1.0f
 				);
 				ImVec2       available     = ImGui::GetContentRegionAvail();
 				const ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
@@ -291,7 +357,8 @@ namespace Unnamed {
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 			ImGui::PushStyleVar(
-				ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)
+				ImGuiStyleVar_WindowPadding,
+				ImVec2(0.0f, 0.0f)
 			);
 
 			constexpr ImGuiWindowFlags hostFlags =
