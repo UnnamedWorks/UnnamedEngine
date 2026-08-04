@@ -4,9 +4,12 @@
 
 #include "../geometry/UiGeometry.h"
 
+#include "../paint/UiPaintCommandList.h"
+
 namespace Unnamed {
 	class UiContainer;
 	class UiTree;
+	class UiPaintContext;
 
 	struct UiUpdateContext;
 
@@ -207,6 +210,12 @@ namespace Unnamed {
 			static_cast<void>(newWorldRect);
 		}
 
+		/// @brief 要素固有の描画コマンドを生成します。
+		/// @param context 描画コンテキスト
+		virtual void OnPaint(UiPaintContext& context) {
+			static_cast<void>(context);
+		}
+
 	private:
 		friend class UiContainer;
 		friend class UiTree;
@@ -233,6 +242,8 @@ namespace Unnamed {
 		UiRect mLastArrangeRect = {}; // 最後に計算された配置矩形
 		UiRect mWorldRect       = {}; // ワールド矩形
 
+		UiPaintCommandList mPaintCommandCache; // 描画コマンドのキャッシュ
+
 		Vec2 mDesiredSize              = Vec2::zero; // 希望サイズ
 		Vec2 mLastMeasureAvailableSize = Vec2::zero; // 最後に計算された利用可能サイズ
 
@@ -241,12 +252,13 @@ namespace Unnamed {
 		UI_VISIBILITY   mVisibility   = UI_VISIBILITY::VISIBLE; // 表示状態
 		UI_INVALIDATION mInvalidation = UI_INVALIDATION::ALL;   // 無効化状態
 
-		bool mEnabled          = true;  // 有効状態
-		bool mHitTestVisible   = true;  // ヒットテスト対象か?
-		bool mHasMeasureResult = false; // Measure() が呼ばれたか?
-		bool mIsMeasuring      = false; // Measure() の実行中か?
-		bool mHasArrangeResult = false; // Arrange() が呼ばれたか?
-		bool mIsArranging      = false; // Arrange() の実行中か?
-		bool mHasWorldRect     = false; // ワールド矩形が計算済みか?
+		bool mEnabled              = true;  // 有効状態
+		bool mHitTestVisible       = true;  // ヒットテスト対象か?
+		bool mHasMeasureResult     = false; // Measure() が呼ばれたか?
+		bool mIsMeasuring          = false; // Measure() の実行中か?
+		bool mHasArrangeResult     = false; // Arrange() が呼ばれたか?
+		bool mIsArranging          = false; // Arrange() の実行中か?
+		bool mHasWorldRect         = false; // ワールド矩形が計算済みか?
+		bool mHasPaintCommandCache = false; // 描画コマンドのキャッシュが有効か?
 	};
 } // namespace Unnamed

@@ -4,6 +4,7 @@
 #include "UiElement.h"
 
 #include "../utils/UiUtils.h"
+#include "engine/unnamed/ui/paint/UiPaintContext.h"
 
 namespace Unnamed {
 	void UiTree::Update(UiElement& root, const UiUpdateContext& context) {
@@ -19,6 +20,26 @@ namespace Unnamed {
 			false,
 			result
 		);
+
+		return result;
+	}
+
+	UiPaintPassResult UiTree::BuildPaintCommands(
+		UiElement& root, UiPaintCommandList& outputCommands
+	) {
+		outputCommands.Clear();
+
+		UiPaintPassResult result = {};
+
+		BuildPaintCommandsRecursive(
+			root,
+			1.0f,
+			outputCommands,
+			result
+		);
+
+		result.mEmittedCommandCount =
+				static_cast<uint32_t>(outputCommands.GetCommandCount());
 
 		return result;
 	}
@@ -51,9 +72,9 @@ namespace Unnamed {
 		}
 
 		const bool shouldUpdate =
-			!element.mHasWorldRect ||
-			parentWorldPositionChanged ||
-			element.IsInvalidated(UI_INVALIDATION::TRANSFORM);
+				!element.mHasWorldRect ||
+				parentWorldPositionChanged ||
+				element.IsInvalidated(UI_INVALIDATION::TRANSFORM);
 
 		bool worldPositionChanged = false;
 
@@ -69,18 +90,18 @@ namespace Unnamed {
 			const bool hadWorldRect = element.mHasWorldRect;
 
 			const bool worldRectChanged =
-				!hadWorldRect ||
-				!AreUiRectsExactlyEqual(
-					oldWorldRect,
-					newWorldRect
-				);
+					!hadWorldRect ||
+					!AreUiRectsExactlyEqual(
+						oldWorldRect,
+						newWorldRect
+					);
 
 			worldPositionChanged =
-				!hadWorldRect ||
-				!AreUiVectorsExactlyEqual(
-					oldWorldRect.pos,
-					newWorldRect.pos
-				);
+					!hadWorldRect ||
+					!AreUiVectorsExactlyEqual(
+						oldWorldRect.pos,
+						newWorldRect.pos
+					);
 
 			// OnWorldRectChanged()中にTransformが再Invalidationされた場合、そのDirtyを残すために先に解除する
 			element.ClearInvalidation(UI_INVALIDATION::TRANSFORM);
@@ -112,6 +133,68 @@ namespace Unnamed {
 				child,
 				childParentWorldPosition,
 				worldPositionChanged,
+				result
+			);
+		}
+	}
+
+	void UiTree::BuildPaintCommandsRecursive(
+		UiElement&          element, float                     parentOpacity,
+		UiPaintCommandList& outputCommands, UiPaintPassResult& result
+	) {
+		++result.mVisitedElementCount;
+
+		// HIDDENまたはCOLLAPSEDな親の子は個別にVISIBLEでも画面へ表示しない。
+		if (element.GetVisibility() != UI_VISIBILITY::VISIBLE) {
+			++result.mSkippedInvisibleSubtreeCount;
+			return;
+		}
+
+		// ワールド座標が確定していない要素は描画できない。PaintDirtyは解除せず、次回へ持ち越す。
+		if (!element.mHasWorldRect) {
+			++result.mSkippedUntransformedSubtreeCount;
+			return;
+		}
+
+		const float effectiveOpacity = std::clamp(
+			parentOpacity * element.GetOpacity(),
+			0.0f,
+			1.0f
+		);
+
+		const bool shouldRebuildCache =
+				!element.mHasPaintCommandCache ||
+				element.IsInvalidated(UI_INVALIDATION::PAINT);
+
+		if (shouldRebuildCache) {
+			++result.mRebuiltCacheCount;
+
+			// OnPaint()中にPaintが再Invalidationされた場合、そのDirtyを残すために先に解除する
+			element.ClearInvalidation(UI_INVALIDATION::PAINT);
+
+			element.mPaintCommandCache.Clear();
+
+			UiPaintContext paintContext(element.mPaintCommandCache);
+
+			element.OnPaint(paintContext);
+
+			element.mHasPaintCommandCache = true;
+		} else {
+			++result.mReusedCacheCount;
+		}
+
+		// キャッシュ内の色自体は要素固有のAlphaだけを保持し、親を含む実効Opacityは出力時に適用する。
+		outputCommands.Append(element.mPaintCommandCache, effectiveOpacity);
+
+		const size_t childCount = element.GetTraversalChildCount();
+
+		for (size_t index = 0; index < childCount; ++index) {
+			UiElement& child = element.GetTraversalChild(index);
+
+			BuildPaintCommandsRecursive(
+				child,
+				effectiveOpacity,
+				outputCommands,
 				result
 			);
 		}

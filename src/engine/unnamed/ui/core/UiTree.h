@@ -1,8 +1,10 @@
 #pragma once
 #include "UiTransformPassResult.h"
+#include "../paint/UiPaintPassResult.h"
 
 namespace Unnamed {
 	class UiElement;
+	class UiPaintCommandList;
 
 	struct UiUpdateContext;
 
@@ -23,6 +25,14 @@ namespace Unnamed {
 			UiElement& root
 		);
 
+		/// @brief UI要素ツリーの描画コマンドを構築します。
+		/// @param root 描画コマンドを構築するルート要素
+		/// @param outputCommands 描画コマンドの出力先
+		/// @return 描画コマンドの構築結果
+		[[nodiscard]] static UiPaintPassResult BuildPaintCommands(
+			UiElement& root, UiPaintCommandList& outputCommands
+		);
+
 	private:
 		/// @brief UI要素ツリーを再帰的に更新します。
 		/// @param element 更新対象の要素
@@ -41,6 +51,18 @@ namespace Unnamed {
 			const Vec2&            parentWorldPosition,
 			bool                   parentWorldPositionChanged,
 			UiTransformPassResult& result
+		);
+
+		/// @brief UI要素ツリーの描画コマンドを再帰的に構築します。
+		/// @param element 描画コマンドを構築する要素
+		/// @param parentOpacity 親要素の不透明度
+		/// @param outputCommands 描画コマンドの出力先
+		/// @param result 描画コマンドの構築結果を格納する構造体
+		static void BuildPaintCommandsRecursive(
+			UiElement&          element,
+			float               parentOpacity,
+			UiPaintCommandList& outputCommands,
+			UiPaintPassResult&  result
 		);
 	};
 } // namespace Unnamed
