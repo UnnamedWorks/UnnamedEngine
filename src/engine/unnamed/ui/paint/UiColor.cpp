@@ -2,24 +2,6 @@
 #include "UiColor.h"
 
 namespace Unnamed {
-	constexpr UiColor UiColor::Transparent() noexcept {
-		return UiColor{
-			.mRed   = 0.0f,
-			.mGreen = 0.0f,
-			.mBlue  = 0.0f,
-			.mAlpha = 0.0f
-		};
-	}
-
-	constexpr UiColor UiColor::White() noexcept {
-		return UiColor{
-			.mRed   = 1.0f,
-			.mGreen = 1.0f,
-			.mBlue  = 1.0f,
-			.mAlpha = 1.0f
-		};
-	}
-
 	bool UiColor::IsValid() const noexcept {
 		return
 				std::isfinite(mRed) &&

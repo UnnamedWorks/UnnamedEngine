@@ -68,7 +68,7 @@ namespace Unnamed {
 
 		mCommands.emplace_back(
 			UiSolidRectPaintCommand{
-				.mRect  = rect,
+				.mRect = rect,
 				.mColor = sanitizedColor
 			}
 		);
@@ -99,13 +99,68 @@ namespace Unnamed {
 		mCommands.emplace_back(
 			UiSolidRoundedRectPaintCommand{
 				.mRoundedRect = roundedRect.GetNormalized(),
+				.mColor        = sanitizedColor
+			}
+		);
+	}
+
+	void UiPaintCommandList::AddSolidBorder(
+		const UiRoundedRect& roundedRect, float thickness, const UiColor& color
+	) {
+		UASSERT(roundedRect.IsValid() && "UI border rectangle must be valid.");
+
+		UASSERT(
+			std::isfinite(thickness) && thickness >= 0.0f &&
+			"UI border thickness must be finite and non-negative."
+		);
+
+		UASSERT(
+			color.IsValid() &&
+			"UI border color must use finite normalized components."
+		);
+
+		if (!roundedRect.IsValid() || roundedRect.rect.IsEmpty()) {
+			return;
+		}
+
+		if (!std::isfinite(thickness) || thickness <= 0.0f) {
+			return;
+		}
+
+		const UiColor sanitizedColor = color.GetSanitized();
+
+		if (sanitizedColor.mAlpha <= 0.0f) {
+			return;
+		}
+
+		const UiRoundedRect normalizedRoundedRect = roundedRect.GetNormalized();
+
+		const float maximumThickness = std::min(
+			normalizedRoundedRect.rect.size.x,
+			normalizedRoundedRect.rect.size.y
+		) * 0.5f;
+
+		const float sanitizedThickness = std::clamp(
+			thickness,
+			0.0f,
+			maximumThickness
+		);
+
+		if (sanitizedThickness <= 0.0f) {
+			return;
+		}
+
+		mCommands.emplace_back(
+			UiSolidBorderPaintCommand{
+				.roundedRect = normalizedRoundedRect,
+				.thickness   = sanitizedThickness,
 				.mColor       = sanitizedColor
 			}
 		);
 	}
 
 	void UiPaintCommandList::Append(
-		const UiPaintCommandList& source, float opacityMultiplier
+		const UiPaintCommandList& source, const float opacityMultiplier
 	) {
 		UASSERT(
 			this != &source && "A UI paint command list cannot append itself."

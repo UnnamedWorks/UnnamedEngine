@@ -18,7 +18,16 @@ namespace Unnamed {
 		UiColor       mColor       = {};
 	};
 
+	/// @brief 単色の内側ボーダー描画コマンドです。
+	struct UiSolidBorderPaintCommand final {
+		UiRoundedRect roundedRect = {};
+		float         thickness   = 0.0f;
+		UiColor       mColor       = {};
+	};
+
 	using UiPaintCommand = std::variant<
-		UiSolidRectPaintCommand, UiSolidRoundedRectPaintCommand
+		UiSolidRectPaintCommand,
+		UiSolidRoundedRectPaintCommand,
+		UiSolidBorderPaintCommand
 	>;
 }

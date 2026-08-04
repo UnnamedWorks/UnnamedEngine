@@ -29,6 +29,15 @@ namespace Unnamed {
 			const UiRoundedRect& roundedRect, const UiColor& color
 		);
 
+		/// @brief 単色の内側ボーダーの描画コマンドを追加します。
+		/// @param roundedRect 描画する角丸矩形
+		/// @param thickness ボーダーの太さ
+		/// @param color 描画する色
+		void AddSolidBorder(
+			const UiRoundedRect& roundedRect, float thickness,
+			const UiColor&       color
+		);
+
 		/// @brief 描画コマンドリストを結合します。
 		/// @param source 結合する描画コマンドリスト
 		/// @param opacityMultiplier 結合する描画コマンドリストの不透明度の乗算値

@@ -13,4 +13,11 @@ namespace Unnamed {
 	) const {
 		mCommandList.AddSolidRoundedRect(roundedRect, color);
 	}
+
+	void UiPaintContext::DrawSolidBorder(
+		const UiRoundedRect& roundedRect, const float thickness,
+		const UiColor& color
+	) const {
+		mCommandList.AddSolidBorder(roundedRect, thickness, color);
+	}
 }
