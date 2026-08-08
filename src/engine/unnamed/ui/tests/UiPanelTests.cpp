@@ -47,7 +47,7 @@ namespace Unnamed {
 			const UiTransformPassResult transformResult =
 					UiTree::UpdateTransforms(root);
 
-			UASSERT(transformResult .mSkippedUnarrangedCount == 0);
+			UASSERT(transformResult .skippedUnarrangedCount == 0);
 		}
 
 		void TestDefaultPanelProducesNoCommands() {

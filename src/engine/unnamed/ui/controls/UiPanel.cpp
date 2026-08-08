@@ -63,9 +63,20 @@ namespace Unnamed {
 			return;
 		}
 
+		const bool hitTestGeometryChanged = !AreCornerRadiiExactlyEqual(
+			mStyle.cornerRadii,
+			sanitizedStyle.cornerRadii
+		);
+
 		mStyle = sanitizedStyle;
 
-		Invalidate(UI_INVALIDATION::PAINT);
+		auto invalidation = UI_INVALIDATION::PAINT;
+
+		if (hitTestGeometryChanged) {
+			invalidation |= UI_INVALIDATION::HIT_TEST;
+		}
+
+		Invalidate(invalidation);
 	}
 
 	const UiPanelStyle& UiPanel::GetStyle() const noexcept {
@@ -155,7 +166,7 @@ namespace Unnamed {
 
 		mStyle.cornerRadii = sanitizedStyle.cornerRadii;
 
-		Invalidate(UI_INVALIDATION::PAINT);
+		Invalidate(UI_INVALIDATION::PAINT | UI_INVALIDATION::HIT_TEST);
 	}
 
 	const UiCornerRadii& UiPanel::GetCornerRadii() const noexcept {
@@ -186,5 +197,20 @@ namespace Unnamed {
 				mStyle.borderColor
 			);
 		}
+	}
+
+	UiHitTestGeometry UiPanel::OnBuildHitTestGeometry() {
+		const bool hasRoundedCorners = mStyle.cornerRadii.topLeft > 0.0f ||
+				mStyle.cornerRadii.topRight > 0.0f ||
+				mStyle.cornerRadii.bottomRight > 0.0f ||
+				mStyle.cornerRadii.bottomLeft > 0.0f;
+
+		if (!hasRoundedCorners) {
+			return UiHitTestGeometry::FromRect(GetWorldRect());
+		}
+
+		return UiHitTestGeometry::FromRoundedRect(
+			UiRoundedRect{.rect = GetWorldRect(), .radii = mStyle.cornerRadii}
+		);
 	}
 }

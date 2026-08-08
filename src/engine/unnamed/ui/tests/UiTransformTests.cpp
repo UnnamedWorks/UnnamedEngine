@@ -113,12 +113,12 @@ namespace Unnamed {
 
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.mVisitedElementCount == 3);
-			assert(result.mUpdatedElementCount == 3);
+			assert(result.visitedElementCount == 3);
+			assert(result.updatedElementCount == 3);
 
-			assert(result.mChangedElementCount == 3);
+			assert(result.changedElementCount == 3);
 
-			assert(result.mSkippedUnarrangedCount == 0);
+			assert(result.skippedUnarrangedCount == 0);
 
 			assert(root.HasWorldRect());
 			assert(panel.HasWorldRect());
@@ -176,11 +176,11 @@ namespace Unnamed {
 
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.mVisitedElementCount == 2);
+			assert(result.visitedElementCount == 2);
 
-			assert(result.mUpdatedElementCount == 0);
+			assert(result.updatedElementCount == 0);
 
-			assert(result.mChangedElementCount == 0);
+			assert(result.changedElementCount == 0);
 
 			assert(child.GetWorldRectChangedCount() == callbackCount);
 		}
@@ -212,9 +212,9 @@ namespace Unnamed {
 			 * Panelは自身のTransform Dirtyで更新され、
 			 * Childは親のWorld Position変更によって更新される。
 			 */
-			assert(result.mUpdatedElementCount == 2);
+			assert(result.updatedElementCount == 2);
 
-			assert(result.mChangedElementCount == 2);
+			assert(result.changedElementCount == 2);
 
 			assert(panel.GetWorldRect().pos.x == 200.0f);
 
@@ -255,9 +255,9 @@ namespace Unnamed {
 
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.mUpdatedElementCount == 1);
+			assert(result.updatedElementCount == 1);
 
-			assert(result.mChangedElementCount == 1);
+			assert(result.changedElementCount == 1);
 
 			assert(child.GetWorldRect().pos.x == 130.0f);
 
@@ -289,9 +289,9 @@ namespace Unnamed {
 			 * PanelのWorldRectサイズだけが変わる。
 			 * PanelのWorld Positionは同じなのでChildは更新不要。
 			 */
-			assert(result.mUpdatedElementCount == 1);
+			assert(result.updatedElementCount == 1);
 
-			assert(result.mChangedElementCount == 1);
+			assert(result.changedElementCount == 1);
 
 			assert(child.GetWorldRectChangedCount() == childCallbackCount);
 
@@ -372,9 +372,9 @@ namespace Unnamed {
 			 */
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.mUpdatedElementCount == 1);
+			assert(result.updatedElementCount == 1);
 
-			assert(result.mChangedElementCount == 0);
+			assert(result.changedElementCount == 0);
 
 			assert(child.GetWorldRectChangedCount() == callbackCount);
 
@@ -388,13 +388,13 @@ namespace Unnamed {
 				element
 			);
 
-			assert(result.mVisitedElementCount == 1);
+			assert(result.visitedElementCount == 1);
 
-			assert(result.mUpdatedElementCount == 0);
+			assert(result.updatedElementCount == 0);
 
-			assert(result.mChangedElementCount == 0);
+			assert(result.changedElementCount == 0);
 
-			assert(result.mSkippedUnarrangedCount == 1);
+			assert(result.skippedUnarrangedCount == 1);
 
 			assert(!element.HasWorldRect());
 

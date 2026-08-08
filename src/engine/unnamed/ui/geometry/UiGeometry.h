@@ -142,5 +142,9 @@ namespace Unnamed {
 		/// @brief 角丸矩形が有効かどうかを判定します。
 		/// @return 有効な場合は true、そうでない場合は false
 		[[nodiscard]] bool IsValid() const noexcept;
+
+		/// @brief 指定された点が角丸矩形内に含まれているかを判定します。
+		/// @param point 判定する点の座標
+		[[nodiscard]] bool Contains(const Vec2& point) const noexcept;
 	};
 } // namespace Unnamed

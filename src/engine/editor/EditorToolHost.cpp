@@ -175,11 +175,11 @@ namespace Unnamed {
 			);
 		}
 
-		if (transformResult.mSkippedUnarrangedCount > 0) {
+		if (transformResult.skippedUnarrangedCount > 0) {
 			DevMsg(
 				"UI",
 				"{} UI elements were skipped because they were not arranged.",
-				transformResult.mSkippedUnarrangedCount
+				transformResult.skippedUnarrangedCount
 			);
 		}
 	}

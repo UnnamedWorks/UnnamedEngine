@@ -44,6 +44,23 @@ namespace Unnamed {
 		return result;
 	}
 
+	UiHitTestResult UiTree::HitTest(UiElement& root, const Vec2& worldPoint) {
+		UASSERT(
+			worldPoint.IsValid() &&
+			"UI Hit Test point must be finite."
+		);
+
+		UiHitTestResult result = {};
+
+		if (!worldPoint.IsValid()) {
+			return result;
+		}
+
+		static_cast<void>(HitTestRecursive(root, worldPoint, result));
+
+		return result;
+	}
+
 	void UiTree::UpdateRecursive(
 		UiElement& element, const UiUpdateContext& context
 	) {
@@ -63,11 +80,11 @@ namespace Unnamed {
 		UiElement& element, const Vec2& parentWorldPosition,
 		bool       parentWorldPositionChanged, UiTransformPassResult& result
 	) {
-		++result.mVisitedElementCount;
+		++result.visitedElementCount;
 
 		// Arrangeされていない要素は、ローカル矩形がまだ確定していないためTransformを更新できない。Transformフラグは解除せず、次回へ持ち越す。
 		if (!element.mHasArrangeResult) {
-			++result.mSkippedUnarrangedCount;
+			++result.skippedUnarrangedCount;
 			return;
 		}
 
@@ -79,7 +96,7 @@ namespace Unnamed {
 		bool worldPositionChanged = false;
 
 		if (shouldUpdate) {
-			++result.mUpdatedElementCount;
+			++result.updatedElementCount;
 
 			UiRect newWorldRect = element.mLayoutRect;
 
@@ -111,7 +128,7 @@ namespace Unnamed {
 			element.mHasWorldRect = true;
 
 			if (worldRectChanged) {
-				++result.mChangedElementCount;
+				++result.changedElementCount;
 
 				// 画面上の位置とサイズが変わったため、描画と入力領域を再生成する
 				element.Invalidate(
@@ -198,5 +215,63 @@ namespace Unnamed {
 				result
 			);
 		}
+	}
+
+	bool UiTree::HitTestRecursive(
+		UiElement& element, const Vec2& worldPoint, UiHitTestResult& result
+	) {
+		++result.visitedElementCount;
+
+		if (element.GetVisibility() != UI_VISIBILITY::VISIBLE) {
+			++result.skippedInvisibleSubtreeCount;
+			return false;
+		}
+
+		result.path.emplace_back(&element);
+
+		// 描画順と逆順に検索する。あとから追加された子ほど手前に描画されるため、ヒットテストでも先に調べる。
+		const size_t childCount = element.GetTraversalChildCount();
+
+		for (size_t count = childCount; count > 0; --count) {
+			const size_t index = count - 1;
+
+			UiElement& child = element.GetTraversalChild(index);
+
+			if (HitTestRecursive(child, worldPoint, result)) {
+				return true;
+			}
+		}
+
+		// HitTestVisibleは自身にのみ作用する。falseでも子要素の検索は上で実効済み
+		if (element.IsHitTestVisible()) {
+			if (!element.mHasWorldRect) {
+				++result.skippedUntransformedElementCount;
+			} else {
+				const bool shouldRebuildGeometry =
+						!element.mHasHitTestGeometry ||
+						element.IsInvalidated(UI_INVALIDATION::HIT_TEST);
+
+				if (shouldRebuildGeometry) {
+					++result.rebuiltGeometryCount;
+
+					// OnBuildHitTestGeometry()中の再Invalidationを残すため、呼び出し前に解除する
+					element.ClearInvalidation(UI_INVALIDATION::HIT_TEST);
+
+					element.mHitTestGeometry = element.OnBuildHitTestGeometry();
+
+					element.mHasHitTestGeometry = true;
+				} else {
+					++result.reusedGeometryCount;
+				}
+
+				if (element.mHitTestGeometry.Contains(worldPoint)) {
+					result.target = &element;
+					return true;
+				}
+			}
+		}
+		result.path.pop_back();
+
+		return false;
 	}
 } // namespace Unnamed

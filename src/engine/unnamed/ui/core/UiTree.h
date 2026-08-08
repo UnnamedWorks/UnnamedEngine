@@ -1,6 +1,7 @@
 #pragma once
 #include "UiTransformPassResult.h"
 #include "../paint/UiPaintPassResult.h"
+#include "engine/unnamed/ui/input/UiHitTestResult.h"
 
 namespace Unnamed {
 	class UiElement;
@@ -33,6 +34,12 @@ namespace Unnamed {
 			UiElement& root, UiPaintCommandList& outputCommands
 		);
 
+		/// @brief 指定された画面座標から最前面のUI要素を検索します。
+		/// @param root 検索対象のルート要素
+		[[nodiscard]] static UiHitTestResult HitTest(
+			UiElement& root, const Vec2& worldPoint
+		);
+
 	private:
 		/// @brief UI要素ツリーを再帰的に更新します。
 		/// @param element 更新対象の要素
@@ -63,6 +70,15 @@ namespace Unnamed {
 			float               parentOpacity,
 			UiPaintCommandList& outputCommands,
 			UiPaintPassResult&  result
+		);
+
+		/// @brief UI要素ツリーを再帰的にヒットテストします。
+		/// @param element ヒットテスト対象の要素
+		/// @param worldPoint ヒットテストするワールド座標
+		/// @param result ヒットテスト結果を格納する構造体
+		/// @return ヒットした要素が存在する場合は true、存在しない場合は false
+		[[nodiscard]] static bool HitTestRecursive(
+			UiElement& element, const Vec2& worldPoint, UiHitTestResult& result
 		);
 	};
 } // namespace Unnamed

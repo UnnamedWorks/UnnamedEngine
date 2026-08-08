@@ -15,7 +15,7 @@ namespace Unnamed {
 		// 非表示のため省略した部分木の数
 		uint32_t mSkippedInvisibleSubtreeCount = 0;
 
-		// WorldRect未経産のため省略した部分木の数
+		// WorldRect未計算のため省略した部分木の数
 		uint32_t mSkippedUntransformedSubtreeCount = 0;
 
 		// 最終コマンドリストへ出力されたコマンド数

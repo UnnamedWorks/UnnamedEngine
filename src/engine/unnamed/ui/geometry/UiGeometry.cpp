@@ -44,9 +44,9 @@ namespace Unnamed {
 
 	bool UiRect::IsValid() const noexcept {
 		return pos.IsValid() &&
-		       size.IsValid() &&
-		       size.x >= 0.0f &&
-		       size.y >= 0.0f;
+				size.IsValid() &&
+				size.x >= 0.0f &&
+				size.y >= 0.0f;
 	}
 
 	bool UiRect::IsEmpty() const noexcept {
@@ -59,9 +59,9 @@ namespace Unnamed {
 		}
 
 		return point.x >= GetLeft() &&
-		       point.y >= GetTop() &&
-		       point.x < GetRight() &&
-		       point.y < GetBottom();
+				point.y >= GetTop() &&
+				point.x < GetRight() &&
+				point.y < GetBottom();
 	}
 
 	UiRect UiRect::FromMinMax(const Vec2& min, const Vec2& max) noexcept {
@@ -101,9 +101,9 @@ namespace Unnamed {
 
 	bool UiThickness::IsFinite() const noexcept {
 		return std::isfinite(left) &&
-		       std::isfinite(top) &&
-		       std::isfinite(right) &&
-		       std::isfinite(bottom);
+				std::isfinite(top) &&
+				std::isfinite(right) &&
+				std::isfinite(bottom);
 	}
 
 	UiCornerRadii UiCornerRadii::Uniform(const float radius) noexcept {
@@ -173,9 +173,9 @@ namespace Unnamed {
 
 	bool UiCornerRadii::IsFinite() const noexcept {
 		return std::isfinite(topLeft) &&
-		       std::isfinite(topRight) &&
-		       std::isfinite(bottomRight) &&
-		       std::isfinite(bottomLeft);
+				std::isfinite(topRight) &&
+				std::isfinite(bottomRight) &&
+				std::isfinite(bottomLeft);
 	}
 
 	UiRoundedRect UiRoundedRect::GetNormalized() const noexcept {
@@ -195,8 +195,101 @@ namespace Unnamed {
 		}
 
 		return radii.topLeft >= 0.0f &&
-		       radii.topRight >= 0.0f &&
-		       radii.bottomRight >= 0.0f &&
-		       radii.bottomLeft >= 0.0f;
+				radii.topRight >= 0.0f &&
+				radii.bottomRight >= 0.0f &&
+				radii.bottomLeft >= 0.0f;
+	}
+
+	bool UiRoundedRect::Contains(const Vec2& point) const noexcept {
+		const UiRoundedRect normalized = GetNormalized();
+
+		if (!normalized.rect.Contains(point)) {
+			return false;
+		}
+
+		const float localX = point.x - normalized.rect.pos.x;
+
+		const float localY = point.y - normalized.rect.pos.y;
+
+		const float width  = normalized.rect.size.x;
+		const float height = normalized.rect.size.y;
+
+		const auto IsInsideCircle = [](
+			const float pointX,
+			const float pointY, const float centerX,
+			const float centerY,
+			const float radius
+		) noexcept {
+			const float offsetX = pointX - centerX;
+			const float offsetY = pointY - centerY;
+
+			return offsetX * offsetX + offsetY * offsetY <= radius * radius;
+		};
+
+		const float topLeftRadius = normalized.radii.topLeft;
+
+		if (
+			topLeftRadius > 0.0f &&
+			localX < topLeftRadius &&
+			localY < topLeftRadius
+		) {
+			return IsInsideCircle(
+				localX,
+				localY,
+				topLeftRadius,
+				topLeftRadius,
+				topLeftRadius
+			);
+		}
+
+		const float topRightRadius = normalized.radii.topRight;
+
+		if (
+			topRightRadius > 0.0f &&
+			localX >= width - topRightRadius &&
+			localY < topRightRadius
+		) {
+			return IsInsideCircle(
+				localX,
+				localY,
+				width - topRightRadius,
+				topRightRadius,
+				topRightRadius
+			);
+		}
+
+		const float bottomRightRadius = normalized.radii.bottomRight;
+
+		if (
+			bottomRightRadius > 0.0f &&
+			localX >= width - bottomRightRadius &&
+			localY >= height - bottomRightRadius
+		) {
+			return IsInsideCircle(
+				localX,
+				localY,
+				width - bottomRightRadius,
+				height - bottomRightRadius,
+				bottomRightRadius
+			);
+		}
+
+		const float bottomLeftRadius = normalized.radii.bottomLeft;
+
+		if (
+			bottomLeftRadius > 0.0f &&
+			localX < bottomLeftRadius &&
+			localY >= height - bottomLeftRadius
+		) {
+			return IsInsideCircle(
+				localX,
+				localY,
+				bottomLeftRadius,
+				height - bottomLeftRadius,
+				bottomLeftRadius
+			);
+		}
+
+		return true;
 	}
 }

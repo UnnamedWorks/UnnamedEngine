@@ -5,6 +5,7 @@
 #include "../geometry/UiGeometry.h"
 
 #include "../paint/UiPaintCommandList.h"
+#include "engine/unnamed/ui/input/UiHitTestGeometry.h"
 
 namespace Unnamed {
 	class UiContainer;
@@ -216,6 +217,12 @@ namespace Unnamed {
 			static_cast<void>(context);
 		}
 
+		/// @brief この要素自身のヒットテスト形状を生成します。
+		/// @return この要素自身のヒットテスト形状
+		[[nodiscard]] virtual UiHitTestGeometry OnBuildHitTestGeometry() {
+			return UiHitTestGeometry::FromRect(GetWorldRect());
+		}
+
 	private:
 		friend class UiContainer;
 		friend class UiTree;
@@ -244,6 +251,9 @@ namespace Unnamed {
 
 		UiPaintCommandList mPaintCommandCache; // 描画コマンドのキャッシュ
 
+		// ヒットテスト形状
+		UiHitTestGeometry mHitTestGeometry = UiHitTestGeometry::Empty();
+
 		Vec2 mDesiredSize              = Vec2::zero; // 希望サイズ
 		Vec2 mLastMeasureAvailableSize = Vec2::zero; // 最後に計算された利用可能サイズ
 
@@ -260,5 +270,6 @@ namespace Unnamed {
 		bool mIsArranging          = false; // Arrange() の実行中か?
 		bool mHasWorldRect         = false; // ワールド矩形が計算済みか?
 		bool mHasPaintCommandCache = false; // 描画コマンドのキャッシュが有効か?
+		bool mHasHitTestGeometry   = false; // ヒットテスト形状が計算済みか?
 	};
 } // namespace Unnamed

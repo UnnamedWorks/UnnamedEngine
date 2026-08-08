@@ -53,6 +53,8 @@ namespace Unnamed {
 	protected:
 		void OnPaint(UiPaintContext& context) override;
 
+		[[nodiscard]] UiHitTestGeometry OnBuildHitTestGeometry() override;
+
 	private:
 		UiPanelStyle mStyle = {};
 	};
