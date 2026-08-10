@@ -16,37 +16,6 @@
 
 #include "../base/BaseInputDevice.h"
 
-enum : uint16_t {
-	VG_A = 1000,
-	VG_B,
-	VG_X,
-	VG_Y,
-	VG_LB,
-	VG_RB,
-	VG_BACK,
-	VG_START,
-	VG_LS,
-	VG_RS,
-	VG_DPAD_UP,
-	VG_DPAD_DOWN,
-	VG_DPAD_LEFT,
-	VG_DPAD_RIGHT,
-	VG_LX,
-	VG_LY,
-	VG_RX,
-	VG_RY,
-	VG_LT,
-	VG_RT,
-	VG_LSTICK_LEFT,
-	VG_LSTICK_RIGHT,
-	VG_LSTICK_UP,
-	VG_LSTICK_DOWN,
-	VG_RSTICK_LEFT,
-	VG_RSTICK_RIGHT,
-	VG_RSTICK_UP,
-	VG_RSTICK_DOWN,
-};
-
 namespace Unnamed {
 	/// @brief GamepadDeviceは、XInput gamepadのbutton・axis状態と時間指定rumble要求を更新します
 	class GamepadDevice final : public BaseInputDevice {
@@ -128,13 +97,13 @@ namespace Unnamed {
 		);
 		[[nodiscard]] static float  Clamp01(float value);
 		[[nodiscard]] static double NowSeconds();
-		[[nodiscard]] static bool   IsAnalogCode(uint32_t code);
-		[[nodiscard]] static bool   IsStickCode(uint32_t code);
+		[[nodiscard]] static bool   IsAnalogCode(GAMEPAD_INPUT_CODE code);
+		[[nodiscard]] static bool   IsStickCode(GAMEPAD_INPUT_CODE code);
 
 		HWND mWindowHandle = nullptr;
 
-		std::unordered_map<uint32_t, bool>  mButtonStates;
-		std::unordered_map<uint32_t, float> mAnalogStates;
+		std::unordered_map<GAMEPAD_INPUT_CODE, bool>  mButtonStates;
+		std::unordered_map<GAMEPAD_INPUT_CODE, float> mAnalogStates;
 
 		HMODULE                   mXInputModule            = nullptr;
 		PFN_XInputGetState        mXInputGetState          = nullptr;

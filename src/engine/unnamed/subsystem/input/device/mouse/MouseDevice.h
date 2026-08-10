@@ -11,25 +11,12 @@
 
 #include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
 
-enum : uint8_t {
-	VM_1          = VK_LBUTTON,  // 左ボタン
-	VM_2          = VK_RBUTTON,  // 右ボタン
-	VM_3          = VK_MBUTTON,  // 中央ボタン
-	VM_4          = VK_XBUTTON1, // サイドボタン1 手前
-	VM_5          = VK_XBUTTON2, // サイドボタン2 奥
-	VM_X          = 100,         // カーソルX軸
-	VM_Y          = 101,         // カーソルY軸
-	VM_WHEEL      = 102,         // ホイール
-	VM_WHEEL_UP   = 103,         // ホイール上
-	VM_WHEEL_DOWN = 104,         // ホイール下
-};
-
 namespace Unnamed {
 	/// @brief マウスデバイスクラス
-	class MouseDevice : public BaseInputDevice {
+	class MouseDevice final : public BaseInputDevice {
 	public:
 		explicit MouseDevice(HWND hWnd);
-		~MouseDevice() override;
+		~MouseDevice() override = default;
 
 		void Update() override;
 
@@ -60,8 +47,8 @@ namespace Unnamed {
 		void ResetDelta();
 
 	private:
-		HWND                               mWindowHandle = nullptr;
-		std::unordered_map<uint32_t, bool> mButtonStates;
+		HWND                                       mWindowHandle = nullptr;
+		std::unordered_map<MOUSE_INPUT_CODE, bool> mButtonStates;
 
 		POINT mPrevCursor; // RDPセッションでのカーソル位置を追跡するための変数
 

@@ -1,6 +1,6 @@
-#include <algorithm>
-
 #include <pch.h>
+
+#include <algorithm>
 #include <ranges>
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
@@ -18,17 +18,6 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "Input";
 
 	namespace {
-		constexpr int MouseButtonIndexFromVirtualKey(const uint32_t vk) {
-			switch (vk) {
-				case VM_1: return 0;
-				case VM_2: return 1;
-				case VM_3: return 2;
-				case VM_4: return 3;
-				case VM_5: return 4;
-				default: return -1;
-			}
-		}
-
 		/// @brief 指定されたウィンドウが実際にアクティブかどうかを判定します
 		/// @param hWnd ウィンドウハンドル
 		/// @return アクティブであればtrue
@@ -157,8 +146,17 @@ namespace Unnamed {
 			inputDevice->Update();
 		}
 
-		mMouseButtonPressed.fill(false);
-		mMouseButtonReleased.fill(false);
+		// 今フレームを再構築
+		mSnapshot.mCurrentKeyStates.clear();
+		mSnapshot.mAnalogValues.clear();
+
+		for (const auto& device : mDevices) {
+			for (const InputKey& key : device->GetSupportedKeys()) {
+				mSnapshot.mCurrentKeyStates[key] = device->GetKeyState(key);
+
+				mSnapshot.mAnalogValues[key] = device->GetAnalogValue(key);
+			}
+		}
 
 		HWND primaryMouseWindow = nullptr;
 		for (const auto& device : mDevices) {
@@ -170,29 +168,6 @@ namespace Unnamed {
 				device
 			);
 			primaryMouseWindow = mouseDevice->GetWindowHandle();
-
-			constexpr std::array<uint32_t, 5> mouseButtons = {
-				VM_1,
-				VM_2,
-				VM_3,
-				VM_4,
-				VM_5,
-			};
-
-			for (const uint32_t vk : mouseButtons) {
-				const int index = MouseButtonIndexFromVirtualKey(vk);
-				if (index < 0) {
-					continue;
-				}
-				const InputKey key{
-					.device = InputDeviceType::MOUSE,
-					.code   = vk
-				};
-				const bool down             = mouseDevice->GetKeyState(key);
-				mMouseButtonPressed[index]  = !mMouseButtonDown[index] && down;
-				mMouseButtonReleased[index] = mMouseButtonDown[index] && !down;
-				mMouseButtonDown[index]     = down;
-			}
 			break;
 		}
 
@@ -201,7 +176,7 @@ namespace Unnamed {
 			if (GetCursorPos(&cursorPos) != 0) {
 				POINT clientPos = cursorPos;
 				ScreenToClient(primaryMouseWindow, &clientPos);
-				mMouseClientPosition = Vec2(
+				mSnapshot.mMouseClientPosition = Vec2(
 					static_cast<float>(clientPos.x),
 					static_cast<float>(clientPos.y)
 				);
@@ -209,7 +184,7 @@ namespace Unnamed {
 
 			RECT clientRect = {};
 			if (GetClientRect(primaryMouseWindow, &clientRect) != 0) {
-				mMouseClientViewportSize = Vec2(
+				mSnapshot.mMouseClientViewportSize = Vec2(
 					static_cast<float>(clientRect.right - clientRect.left),
 					static_cast<float>(clientRect.bottom - clientRect.top)
 				);
@@ -238,38 +213,41 @@ namespace Unnamed {
 
 		// アクション状態を一時的に保存するマップ
 		std::unordered_map<std::string, std::tuple<bool, bool, bool>>
-			tempActionStates;
+				tempActionStates;
 
 		// <axis名, <正の値, 負の値>>
 		std::unordered_map<std::string, std::pair<float, float>> tempAxis1D;
 		// <axis名, <正のVec2, 負のVec2>>
-		std::unordered_map<std::string, std::pair<Vec2, Vec2>> tempAxis2D;
+		std::unordered_map<std::string, std::pair<Vec2, Vec2>>   tempAxis2D;
 
 		// すべての入力を処理して一時マップに値を蓄積
 		for (const auto& [key, type, target, scale, scale2D, axis] :
 		     mBindings) {
-			const bool  bIsDown     = GetHardwareKeyState(key);
-			const float analogValue = GetAnalogValue(key);
+			const bool  bIsDown     = mSnapshot.IsKeyDown(key);
+			const bool  bIsPressed  = mSnapshot.WasKeyPressed(key);
+			const bool  bIsReleased = mSnapshot.WasKeyReleased(key);
+			const float analogValue = mSnapshot.GetAnalogValue(key);
 
-			const bool bWasDown    = mPreviousKeyStates[key];
-			mCurrentKeyStates[key] = bIsDown;
+			mSnapshot.mPreviousKeyStates[key];
+			mSnapshot.mCurrentKeyStates[key] = bIsDown;
 
 			if (type == BINDING_TYPE::ACTION) {
 				// このキーの状態を計算
-				bool bIsPressed  = !bWasDown && bIsDown; // 新規に押された
-				bool bIsReleased = bWasDown && !bIsDown; // 離された
-				bool bIsHeld     = bIsDown;
+				const bool bIsHeld = bIsDown;
 
 				// 一時マップに存在しなければ初期化
 				if (!tempActionStates.contains(target)) {
 					tempActionStates[target] = std::make_tuple(
-						false, false, false
+						false,
+						false,
+						false
 					);
 				}
 
 				// 状態を論理ORで更新
 				auto& [existing_pressed, existing_held, existing_released] =
-					tempActionStates[target];
+						tempActionStates[target];
+
 				existing_pressed  = existing_pressed || bIsPressed;
 				existing_held     = existing_held || bIsHeld;
 				existing_released = existing_released || bIsReleased;
@@ -310,11 +288,11 @@ namespace Unnamed {
 		// 一時マップから最終アクション状態を更新（デバイス入力分）
 		for (const auto& [action, states] : tempActionStates) {
 			mActionStates[action].bIsPressed =
-				mActionStates[action].bIsPressed || std::get<0>(states);
+					mActionStates[action].bIsPressed || std::get<0>(states);
 			mActionStates[action].bIsHeld =
-				mActionStates[action].bIsHeld || std::get<1>(states);
+					mActionStates[action].bIsHeld || std::get<1>(states);
 			mActionStates[action].bIsReleased =
-				mActionStates[action].bIsReleased || std::get<2>(states);
+					mActionStates[action].bIsReleased || std::get<2>(states);
 		}
 
 		// 一時マップから最終的な値を計算
@@ -330,7 +308,7 @@ namespace Unnamed {
 		}
 
 		// 前フレームの状態を保存
-		mPreviousKeyStates = mCurrentKeyStates;
+		mSnapshot.mPreviousKeyStates = mSnapshot.mCurrentKeyStates;
 
 		//マウスのデルタをリセット
 		for (const auto& device : mDevices) {
@@ -387,7 +365,8 @@ namespace Unnamed {
 				// RAW Inputを受け取る
 				UINT size = 0;
 				GetRawInputData(
-					reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
+					reinterpret_cast<HRAWINPUT>(lParam),
+					// NOLINT(performance-no-int-to-ptr)
 					RID_INPUT,
 					nullptr,
 					&size,
@@ -398,7 +377,8 @@ namespace Unnamed {
 
 				if (
 					GetRawInputData(
-						reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
+						reinterpret_cast<HRAWINPUT>(lParam),
+						// NOLINT(performance-no-int-to-ptr)
 						RID_INPUT,
 						buffer.data(),
 						&size,
@@ -420,12 +400,12 @@ namespace Unnamed {
 				) {
 					for (const auto& device : mDevices) {
 						if (device->GetDeviceType() !=
-						    InputDeviceType::GAMEPAD) {
+							InputDeviceType::GAMEPAD) {
 							continue;
 						}
 
 						std::static_pointer_cast<GamepadDevice>(device)
-							->RequestDirectInputRefresh();
+								->RequestDirectInputRefresh();
 					}
 				}
 				break;
@@ -544,7 +524,9 @@ namespace Unnamed {
 			}
 
 			std::static_pointer_cast<GamepadDevice>(device)->EnqueueRumble(
-				low, high, durationSec
+				low,
+				high,
+				durationSec
 			);
 			return;
 		}
@@ -615,7 +597,8 @@ namespace Unnamed {
 		DevMsg(
 			kChannel,
 			"アクションをバインドしました: {}, key = {}",
-			action, KeyNameTable::ToString(key)
+			action,
+			KeyNameTable::ToString(key)
 		);
 	}
 
@@ -637,7 +620,9 @@ namespace Unnamed {
 		DevMsg(
 			kChannel,
 			"1D軸をバインドしました: {}, key = {}, scale = {}",
-			axis, KeyNameTable::ToString(key), scale
+			axis,
+			KeyNameTable::ToString(key),
+			scale
 		);
 	}
 
@@ -668,8 +653,10 @@ namespace Unnamed {
 		DevMsg(
 			kChannel,
 			"2D軸をバインドしました: {}, key = {}, axis = {}, scale = {}",
-			axis, KeyNameTable::ToString(key),
-			static_cast<int>(axisType), scale
+			axis,
+			KeyNameTable::ToString(key),
+			static_cast<int>(axisType),
+			scale
 		);
 	}
 
@@ -678,8 +665,8 @@ namespace Unnamed {
 			mBindings,
 			[&action](const InputBinding& binding) {
 				return binding.type ==
-				       BINDING_TYPE::ACTION &&
-				       binding.target == action;
+						BINDING_TYPE::ACTION &&
+						binding.target == action;
 			}
 		);
 	}
@@ -828,12 +815,12 @@ namespace Unnamed {
 
 	Vec2 InputSystem::GetMouseClientPosition() const {
 		if (!mMouseViewportRectOverride) {
-			return mMouseClientPosition;
+			return mSnapshot.mMouseClientPosition;
 		}
 
 		auto localPos = Vec2(
-			mMouseClientPosition.x - mMouseViewportOrigin.x,
-			mMouseClientPosition.y - mMouseViewportOrigin.y
+			mSnapshot.mMouseClientPosition.x - mMouseViewportOrigin.x,
+			mSnapshot.mMouseClientPosition.y - mMouseViewportOrigin.y
 		);
 		if (
 			mMouseViewportSizeOverride.x > 0.0f &&
@@ -842,9 +829,9 @@ namespace Unnamed {
 			mMouseViewportVirtualSize.y > 0.0f
 		) {
 			localPos.x *=
-				mMouseViewportVirtualSize.x / mMouseViewportSizeOverride.x;
+					mMouseViewportVirtualSize.x / mMouseViewportSizeOverride.x;
 			localPos.y *=
-				mMouseViewportVirtualSize.y / mMouseViewportSizeOverride.y;
+					mMouseViewportVirtualSize.y / mMouseViewportSizeOverride.y;
 		}
 		return localPos;
 	}
@@ -857,26 +844,29 @@ namespace Unnamed {
 		) {
 			return mMouseViewportVirtualSize;
 		}
-		return mMouseClientViewportSize;
+		return mSnapshot.mMouseClientViewportSize;
 	}
 
-	bool InputSystem::IsMouseButtonDown(const uint32_t mouseVirtualKey) const {
-		const int index = MouseButtonIndexFromVirtualKey(mouseVirtualKey);
-		return index >= 0 ? mMouseButtonDown[index] : false;
+	bool InputSystem::IsMouseButtonDown(
+		const MOUSE_INPUT_CODE code
+	) const {
+		return mSnapshot.IsKeyDown(InputKey::Mouse(code));
 	}
 
 	bool InputSystem::WasMouseButtonPressed(
-		const uint32_t mouseVirtualKey
+		const MOUSE_INPUT_CODE code
 	) const {
-		const int index = MouseButtonIndexFromVirtualKey(mouseVirtualKey);
-		return index >= 0 ? mMouseButtonPressed[index] : false;
+		return mSnapshot.WasKeyPressed(InputKey::Mouse(code));
 	}
 
 	bool InputSystem::WasMouseButtonReleased(
-		const uint32_t mouseVirtualKey
+		const MOUSE_INPUT_CODE code
 	) const {
-		const int index = MouseButtonIndexFromVirtualKey(mouseVirtualKey);
-		return index >= 0 ? mMouseButtonReleased[index] : false;
+		return mSnapshot.WasKeyReleased(InputKey::Mouse(code));
+	}
+
+	const InputSnapshot& InputSystem::GetSnapshot() const {
+		return mSnapshot;
 	}
 
 	bool InputSystem::ResolveMouseCursorLockState() const {
@@ -899,12 +889,12 @@ namespace Unnamed {
 			"ウィンドウが非アクティブになったため、入力状態をリセットします。"
 		);
 
-		for (const auto& [key, bIsPressed] : mCurrentKeyStates) {
+		for (const auto& [key, bIsPressed] : mSnapshot.mCurrentKeyStates) {
 			if (bIsPressed) {
 				// 現在押下中のキーは前フレームの状態に移行
-				mPreviousKeyStates[key] = true;
+				mSnapshot.mPreviousKeyStates[key] = true;
 				// 現在の状態はリセット
-				mCurrentKeyStates[key] = false;
+				mSnapshot.mCurrentKeyStates[key]  = false;
 			}
 		}
 
@@ -934,12 +924,9 @@ namespace Unnamed {
 			device.get()->ResetStates();
 		}
 
-		mMouseLockAnchor.valid   = false;
-		mMouseClientPosition     = Vec2::zero;
-		mMouseClientViewportSize = Vec2::zero;
-		mMouseButtonDown.fill(false);
-		mMouseButtonPressed.fill(false);
-		mMouseButtonReleased.fill(false);
+		mMouseLockAnchor.valid             = false;
+		mSnapshot.mMouseClientPosition     = Vec2::zero;
+		mSnapshot.mMouseClientViewportSize = Vec2::zero;
 	}
 
 	/// @brief RAW Inputの処理
@@ -948,12 +935,12 @@ namespace Unnamed {
 		for (auto& device : mDevices) {
 			if (device->GetDeviceType() == InputDeviceType::KEYBOARD) {
 				std::static_pointer_cast<KeyboardDevice>(device)->
-					HandleRawInput(rawInput);
+						HandleRawInput(rawInput);
 			}
 
 			if (device->GetDeviceType() == InputDeviceType::MOUSE) {
 				std::static_pointer_cast<MouseDevice>(device)->
-					HandleRawInput(rawInput);
+						HandleRawInput(rawInput);
 			}
 		}
 	}
@@ -970,7 +957,8 @@ namespace Unnamed {
 		Warning(
 			kChannel,
 			"Device '{}' not found for key '{}'.",
-			static_cast<int>(key.device), KeyNameTable::ToString(key)
+			static_cast<int>(key.device),
+			KeyNameTable::ToString(key)
 		);
 		return false;
 	}
@@ -1026,9 +1014,9 @@ namespace Unnamed {
 
 			const size_t firstSpace = trimmed.find(' ');
 			const size_t len        =
-				firstSpace == std::string::npos ?
-					trimmed.size() :
-					firstSpace;
+					firstSpace == std::string::npos ?
+						trimmed.size() :
+						firstSpace;
 
 			std::string out;
 			out.reserve(len);
@@ -1045,29 +1033,26 @@ namespace Unnamed {
 		}
 
 		for (const auto& [key, commands] : mCommandBinds) {
-			const bool bIsDown  = GetHardwareKeyState(key);
-			const bool bWasDown = mPreviousKeyStates[key];
-
-			mCurrentKeyStates[key] = bIsDown;
-
-			const bool bPressed  = !bWasDown && bIsDown;
-			const bool bReleased = bWasDown && !bIsDown;
+			const bool bPressed  = mSnapshot.WasKeyPressed(key);
+			const bool bReleased = mSnapshot.WasKeyReleased(key);
 
 			if (bPressed) {
-				for (const auto& cmd : commands) {
+				for (const auto& command : commands) {
 					console->ExecuteCommand(
-						cmd, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+						command, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
 					);
 				}
 			}
 
 			if (bReleased) {
-				for (const auto& cmd : commands) {
-					const std::string releaseCmd =
-						MakeReleaseCommandFromPress(cmd);
-					if (!releaseCmd.empty()) {
+				for (const auto& command : commands) {
+					const auto releasedCommand = MakeReleaseCommandFromPress(
+						command
+					);
+
+					if (!releasedCommand.empty()) {
 						console->ExecuteCommand(
-							releaseCmd,
+							releasedCommand,
 							EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
 						);
 					}

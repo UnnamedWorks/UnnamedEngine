@@ -30,14 +30,8 @@ namespace Unnamed {
 			);
 		}
 
-		constexpr InputKey mouseX = {
-			.device = InputDeviceType::MOUSE,
-			.code   = VM_X
-		};
-		constexpr InputKey mouseY = {
-			.device = InputDeviceType::MOUSE,
-			.code   = VM_Y
-		};
+		constexpr InputKey mouseX = InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_X);
+		constexpr InputKey mouseY = InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_Y);
 
 		mInput->BindAxis2D(
 			"Mouse",
@@ -67,7 +61,7 @@ namespace Unnamed {
 		mMoveInput = Vec3::zero;
 		mWishDir   = Vec3::zero;
 		if (mLookEnabled && mInput->
-		    IsHeld("ed_look")) {
+			IsHeld("ed_look")) {
 			ProcessInput();
 		} else {
 			mInput->SetMouseCursorLocked(false);
@@ -99,7 +93,7 @@ namespace Unnamed {
 
 	void EditorCameraComponent::Deserialize(const JsonReader& reader) {
 		mFovYDegrees =
-			reader.ReadFloatOr("fovYDegrees", mFovYDegrees);
+				reader.ReadFloatOr("fovYDegrees", mFovYDegrees);
 		mNearZ      = reader.ReadFloatOr("nearZ", mNearZ);
 		mFarZ       = reader.ReadFloatOr("farZ", mFarZ);
 		mExposureEv = reader.ReadFloatOr("exposureEv", mExposureEv);
@@ -165,9 +159,9 @@ namespace Unnamed {
 		const Vec3       position = transform->GetPosition();
 		const Quaternion rotation = transform->GetRotation();
 		const Mat4       world    =
-			Mat4::FromQuaternion(rotation) *
-			Mat4::Scale(Vec3::one) *
-			Mat4::Translate(position);
+				Mat4::FromQuaternion(rotation) *
+				Mat4::Scale(Vec3::one) *
+				Mat4::Translate(position);
 
 		outView = world.Inverse();
 		outProj = Mat4::PerspectiveFovD3D(
@@ -310,8 +304,8 @@ namespace Unnamed {
 		const Mat4       rotMatrix  = Mat4::FromQuaternion(currentRot);
 
 		mWishDir = rotMatrix.GetRight() * mMoveInput.x +
-		           rotMatrix.GetUp() * mMoveInput.y +
-		           rotMatrix.GetForward() * mMoveInput.z;
+				rotMatrix.GetUp() * mMoveInput.y +
+				rotMatrix.GetForward() * mMoveInput.z;
 
 		mWishDir.Normalize();
 	}

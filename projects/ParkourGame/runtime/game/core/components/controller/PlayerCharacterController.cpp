@@ -26,14 +26,8 @@ namespace Unnamed {
 				return;
 			}
 
-			constexpr InputKey gamepadMoveX = {
-				.device = InputDeviceType::GAMEPAD,
-				.code   = VG_LX
-			};
-			constexpr InputKey gamepadMoveY = {
-				.device = InputDeviceType::GAMEPAD,
-				.code   = VG_LY
-			};
+			constexpr InputKey gamepadMoveX = InputKey::Gamepad(GAMEPAD_INPUT_CODE::LX);
+			constexpr InputKey gamepadMoveY = InputKey::Gamepad(GAMEPAD_INPUT_CODE::LY);
 
 			input->BindAxis2D("GamepadMove", gamepadMoveX, INPUT_AXIS::X, 1.0f);
 			input->BindAxis2D("GamepadMove", gamepadMoveY, INPUT_AXIS::Y, 1.0f);

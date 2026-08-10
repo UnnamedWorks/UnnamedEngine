@@ -19,57 +19,69 @@ namespace Unnamed {
 			"xinput1_1.dll",
 		};
 
-		constexpr std::array<InputKey, 28> kSupportedKeys = {
-			InputKey{InputDeviceType::GAMEPAD, VG_A},
-			InputKey{InputDeviceType::GAMEPAD, VG_B},
-			InputKey{InputDeviceType::GAMEPAD, VG_X},
-			InputKey{InputDeviceType::GAMEPAD, VG_Y},
-			InputKey{InputDeviceType::GAMEPAD, VG_LB},
-			InputKey{InputDeviceType::GAMEPAD, VG_RB},
-			InputKey{InputDeviceType::GAMEPAD, VG_BACK},
-			InputKey{InputDeviceType::GAMEPAD, VG_START},
-			InputKey{InputDeviceType::GAMEPAD, VG_LS},
-			InputKey{InputDeviceType::GAMEPAD, VG_RS},
-			InputKey{InputDeviceType::GAMEPAD, VG_DPAD_UP},
-			InputKey{InputDeviceType::GAMEPAD, VG_DPAD_DOWN},
-			InputKey{InputDeviceType::GAMEPAD, VG_DPAD_LEFT},
-			InputKey{InputDeviceType::GAMEPAD, VG_DPAD_RIGHT},
-			InputKey{InputDeviceType::GAMEPAD, VG_LX},
-			InputKey{InputDeviceType::GAMEPAD, VG_LY},
-			InputKey{InputDeviceType::GAMEPAD, VG_RX},
-			InputKey{InputDeviceType::GAMEPAD, VG_RY},
-			InputKey{InputDeviceType::GAMEPAD, VG_LT},
-			InputKey{InputDeviceType::GAMEPAD, VG_RT},
-			InputKey{InputDeviceType::GAMEPAD, VG_LSTICK_LEFT},
-			InputKey{InputDeviceType::GAMEPAD, VG_LSTICK_RIGHT},
-			InputKey{InputDeviceType::GAMEPAD, VG_LSTICK_UP},
-			InputKey{InputDeviceType::GAMEPAD, VG_LSTICK_DOWN},
-			InputKey{InputDeviceType::GAMEPAD, VG_RSTICK_LEFT},
-			InputKey{InputDeviceType::GAMEPAD, VG_RSTICK_RIGHT},
-			InputKey{InputDeviceType::GAMEPAD, VG_RSTICK_UP},
-			InputKey{InputDeviceType::GAMEPAD, VG_RSTICK_DOWN},
+		constexpr std::array kSupportedKeys = {
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::A),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::B),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::X),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::Y),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LB),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RB),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::BACK),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::START),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LS),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RS),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::DPAD_UP),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::DPAD_DOWN),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::DPAD_LEFT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::DPAD_RIGHT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LX),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LY),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RX),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RY),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LSTICK_LEFT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LSTICK_RIGHT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LSTICK_UP),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::LSTICK_DOWN),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RSTICK_LEFT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RSTICK_RIGHT),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RSTICK_UP),
+			InputKey::Gamepad(GAMEPAD_INPUT_CODE::RSTICK_DOWN),
 		};
 
 		float NormalizeDirectInputSignedAxis(const LONG value) {
 			if (value >= -1000 && value <= 1000) {
-				return std::clamp(static_cast<float>(value) / 1000.0f, -1.0f,
-				                  1.0f);
+				return std::clamp(
+					static_cast<float>(value) / 1000.0f,
+					-1.0f,
+					1.0f
+				);
 			}
 
 			constexpr float kCenter = 32767.5f;
-			return std::clamp((static_cast<float>(value) - kCenter) / kCenter,
-			                  -1.0f, 1.0f);
+			return std::clamp(
+				(static_cast<float>(value) - kCenter) / kCenter,
+				-1.0f,
+				1.0f
+			);
 		}
 
 		float NormalizeDirectInputUnsignedAxis(const LONG value) {
 			if (value >= 0 && value <= 255) {
-				return std::clamp(static_cast<float>(value) / 255.0f, 0.0f,
-				                  1.0f);
+				return std::clamp(
+					static_cast<float>(value) / 255.0f,
+					0.0f,
+					1.0f
+				);
 			}
 
 			if (value >= 0 && value <= 1000) {
-				return std::clamp(static_cast<float>(value) / 1000.0f, 0.0f,
-				                  1.0f);
+				return std::clamp(
+					static_cast<float>(value) / 1000.0f,
+					0.0f,
+					1.0f
+				);
 			}
 
 			return std::clamp(static_cast<float>(value) / 65535.0f, 0.0f, 1.0f);
@@ -82,10 +94,10 @@ namespace Unnamed {
 			}
 			const float sign = value >= 0.0f ? 1.0f : -1.0f;
 			return sign * std::clamp(
-				       (absValue - deadzone) / (1.0f - deadzone),
-				       0.0f,
-				       1.0f
-			       );
+				(absValue - deadzone) / (1.0f - deadzone),
+				0.0f,
+				1.0f
+			);
 		}
 
 		float ApplyUnsignedDeadzone(const float value, const float deadzone) {
@@ -102,16 +114,17 @@ namespace Unnamed {
 		bool HasXInputActivity(const XINPUT_STATE& state) {
 			const auto& g = state.Gamepad;
 			return g.wButtons != 0 ||
-			       g.bLeftTrigger > 30 ||
-			       g.bRightTrigger > 30 ||
-			       std::abs(g.sThumbLX) > 7849 ||
-			       std::abs(g.sThumbLY) > 7849 ||
-			       std::abs(g.sThumbRX) > 8689 ||
-			       std::abs(g.sThumbRY) > 8689;
+					g.bLeftTrigger > 30 ||
+					g.bRightTrigger > 30 ||
+					std::abs(g.sThumbLX) > 7849 ||
+					std::abs(g.sThumbLY) > 7849 ||
+					std::abs(g.sThumbRX) > 8689 ||
+					std::abs(g.sThumbRY) > 8689;
 		}
 	}
 
-	GamepadDevice::GamepadDevice(const HWND hWnd) : mWindowHandle(hWnd) {
+	GamepadDevice::GamepadDevice(const HWND hWnd) :
+		mWindowHandle(hWnd) {
 		LoadXInput();
 		LoadDirectInput();
 		ResetFrameStates();
@@ -147,18 +160,20 @@ namespace Unnamed {
 			return false;
 		}
 
-		if (const auto it = mButtonStates.find(key.code);
+		auto code = static_cast<GAMEPAD_INPUT_CODE>(key.code);
+
+		if (const auto it = mButtonStates.find(code);
 			it != mButtonStates.end()) {
 			return it->second;
 		}
 
-		if (const auto it = mAnalogStates.find(key.code);
+		if (const auto it = mAnalogStates.find(code);
 			it != mAnalogStates.end()) {
-			if (key.code == VG_LT || key.code == VG_RT) {
+			if (code == GAMEPAD_INPUT_CODE::LT || code == GAMEPAD_INPUT_CODE::RT) {
 				return it->second > kTriggerAsButtonThreshold;
 			}
 
-			if (IsStickCode(key.code)) {
+			if (IsStickCode(code)) {
 				return std::abs(it->second) > kAxisAsButtonThreshold;
 			}
 		}
@@ -171,12 +186,14 @@ namespace Unnamed {
 			return 0.0f;
 		}
 
-		if (const auto it = mAnalogStates.find(key.code);
+		const auto code = static_cast<GAMEPAD_INPUT_CODE>(key.code);
+
+		if (const auto it = mAnalogStates.find(code);
 			it != mAnalogStates.end()) {
 			return it->second;
 		}
 
-		if (const auto it = mButtonStates.find(key.code);
+		if (const auto it = mButtonStates.find(code);
 			it != mButtonStates.end()) {
 			return it->second ? 1.0f : 0.0f;
 		}
@@ -206,11 +223,13 @@ namespace Unnamed {
 			return;
 		}
 
-		mRumbleEvents.emplace_back(RumbleEvent{
-			.low     = Clamp01(low),
-			.high    = Clamp01(high),
-			.endTime = NowSeconds() + static_cast<double>(durationSec)
-		});
+		mRumbleEvents.emplace_back(
+			RumbleEvent{
+				.low     = Clamp01(low),
+				.high    = Clamp01(high),
+				.endTime = NowSeconds() + static_cast<double>(durationSec)
+			}
+		);
 	}
 
 	void GamepadDevice::StopRumble() {
@@ -250,7 +269,8 @@ namespace Unnamed {
 		IDirectInputDevice8W* device = nullptr;
 		if (FAILED(
 			mDirectInput->CreateDevice(instance->guidInstance, &device, nullptr
-			))) {
+			)
+		)) {
 			return TRUE;
 		}
 
@@ -386,12 +406,12 @@ namespace Unnamed {
 
 		// 複数コントローラーを一つの仮想ゲームパッドとして合成する
 		const auto mergeButton = [this](
-			const uint32_t code, const bool pressed
+			const GAMEPAD_INPUT_CODE code, const bool pressed
 		) {
 			mButtonStates[code] = mButtonStates[code] || pressed;
 		};
 		const auto mergeAnalog = [this](
-			const uint32_t code, const float value
+			const GAMEPAD_INPUT_CODE code, const float value
 		) {
 			auto& slot = mAnalogStates[code];
 			if (std::abs(value) > std::abs(slot)) {
@@ -399,50 +419,85 @@ namespace Unnamed {
 			}
 		};
 
-		mergeButton(VG_A, (gamepad.wButtons & XINPUT_GAMEPAD_A) != 0);
-		mergeButton(VG_B, (gamepad.wButtons & XINPUT_GAMEPAD_B) != 0);
-		mergeButton(VG_X, (gamepad.wButtons & XINPUT_GAMEPAD_X) != 0);
-		mergeButton(VG_Y, (gamepad.wButtons & XINPUT_GAMEPAD_Y) != 0);
 		mergeButton(
-			VG_LB, (gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0);
+			GAMEPAD_INPUT_CODE::A,
+			(gamepad.wButtons & XINPUT_GAMEPAD_A) != 0
+		);
 		mergeButton(
-			VG_RB, (gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0);
-		mergeButton(VG_BACK, (gamepad.wButtons & XINPUT_GAMEPAD_BACK) != 0);
-		mergeButton(VG_START, (gamepad.wButtons & XINPUT_GAMEPAD_START) != 0);
-		mergeButton(VG_LS, (gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) != 0);
+			GAMEPAD_INPUT_CODE::B,
+			(gamepad.wButtons & XINPUT_GAMEPAD_B) != 0
+		);
 		mergeButton(
-			VG_RS, (gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) != 0);
-		mergeButton(VG_DPAD_UP,
-		            (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0);
-		mergeButton(VG_DPAD_DOWN,
-		            (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0);
-		mergeButton(VG_DPAD_LEFT,
-		            (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0);
-		mergeButton(VG_DPAD_RIGHT,
-		            (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0);
+			GAMEPAD_INPUT_CODE::X,
+			(gamepad.wButtons & XINPUT_GAMEPAD_X) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::Y,
+			(gamepad.wButtons & XINPUT_GAMEPAD_Y) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::LB,
+			(gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::RB,
+			(gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::BACK,
+			(gamepad.wButtons & XINPUT_GAMEPAD_BACK) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::START,
+			(gamepad.wButtons & XINPUT_GAMEPAD_START) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::LS,
+			(gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::RS,
+			(gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::DPAD_UP,
+			(gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::DPAD_DOWN,
+			(gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::DPAD_LEFT,
+			(gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::DPAD_RIGHT,
+			(gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0
+		);
 
 		mergeAnalog(
-			VG_LX,
+			GAMEPAD_INPUT_CODE::LX,
 			NormalizeSignedAxis(gamepad.sThumbLX, kXInputStickDeadzoneLeft)
 		);
 		mergeAnalog(
-			VG_LY,
+			GAMEPAD_INPUT_CODE::LY,
 			NormalizeSignedAxis(gamepad.sThumbLY, kXInputStickDeadzoneLeft)
 		);
 		mergeAnalog(
-			VG_RX,
+			GAMEPAD_INPUT_CODE::RX,
 			NormalizeSignedAxis(gamepad.sThumbRX, kXInputStickDeadzoneRight)
 		);
 		mergeAnalog(
-			VG_RY,
+			GAMEPAD_INPUT_CODE::RY,
 			NormalizeSignedAxis(gamepad.sThumbRY, kXInputStickDeadzoneRight)
 		);
 		mergeAnalog(
-			VG_LT,
+			GAMEPAD_INPUT_CODE::LT,
 			NormalizeUnsignedAxis(gamepad.bLeftTrigger, kXInputTriggerDeadzone)
 		);
 		mergeAnalog(
-			VG_RT,
+			GAMEPAD_INPUT_CODE::RT,
 			NormalizeUnsignedAxis(gamepad.bRightTrigger, kXInputTriggerDeadzone)
 		);
 	}
@@ -477,13 +532,15 @@ namespace Unnamed {
 			return;
 		}
 
-		if (FAILED(directInput8Create(
-			GetModuleHandleW(nullptr),
-			DIRECTINPUT_VERSION,
-			IID_IDirectInput8W,
-			reinterpret_cast<void**>(&mDirectInput),
-			nullptr
-		))) {
+		if (FAILED(
+			directInput8Create(
+				GetModuleHandleW(nullptr),
+				DIRECTINPUT_VERSION,
+				IID_IDirectInput8W,
+				reinterpret_cast<void**>(&mDirectInput),
+				nullptr
+			)
+		)) {
 			FreeLibrary(mDirectInputModule);
 			mDirectInputModule = nullptr;
 			return;
@@ -578,12 +635,12 @@ namespace Unnamed {
 
 	void GamepadDevice::MergeDirectInputState(const DIJOYSTATE2& state) {
 		const auto mergeButton = [this](
-			const uint32_t code, const bool pressed
+			const GAMEPAD_INPUT_CODE code, const bool pressed
 		) {
 			mButtonStates[code] = mButtonStates[code] || pressed;
 		};
 		const auto mergeAnalog = [this](
-			const uint32_t code, const float value
+			const GAMEPAD_INPUT_CODE code, const float value
 		) {
 			auto& slot = mAnalogStates[code];
 			if (std::abs(value) > std::abs(slot)) {
@@ -591,16 +648,22 @@ namespace Unnamed {
 			}
 		};
 
-		mergeButton(VG_A, (state.rgbButtons[0] & 0x80) != 0);
-		mergeButton(VG_B, (state.rgbButtons[1] & 0x80) != 0);
-		mergeButton(VG_X, (state.rgbButtons[2] & 0x80) != 0);
-		mergeButton(VG_Y, (state.rgbButtons[3] & 0x80) != 0);
-		mergeButton(VG_LB, (state.rgbButtons[4] & 0x80) != 0);
-		mergeButton(VG_RB, (state.rgbButtons[5] & 0x80) != 0);
-		mergeButton(VG_BACK, (state.rgbButtons[6] & 0x80) != 0);
-		mergeButton(VG_START, (state.rgbButtons[7] & 0x80) != 0);
-		mergeButton(VG_LS, (state.rgbButtons[8] & 0x80) != 0);
-		mergeButton(VG_RS, (state.rgbButtons[9] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::A, (state.rgbButtons[0] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::B, (state.rgbButtons[1] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::X, (state.rgbButtons[2] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::Y, (state.rgbButtons[3] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::LB, (state.rgbButtons[4] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::RB, (state.rgbButtons[5] & 0x80) != 0);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::BACK,
+			(state.rgbButtons[6] & 0x80) != 0
+		);
+		mergeButton(
+			GAMEPAD_INPUT_CODE::START,
+			(state.rgbButtons[7] & 0x80) != 0
+		);
+		mergeButton(GAMEPAD_INPUT_CODE::LS, (state.rgbButtons[8] & 0x80) != 0);
+		mergeButton(GAMEPAD_INPUT_CODE::RS, (state.rgbButtons[9] & 0x80) != 0);
 
 		bool hasPov = false;
 		for (const DWORD pov : state.rgdwPOV) {
@@ -608,17 +671,41 @@ namespace Unnamed {
 				continue;
 			}
 			hasPov = true;
-			mergeButton(VG_DPAD_UP, pov >= 31500 || pov <= 4500);
-			mergeButton(VG_DPAD_RIGHT, pov >= 4500 && pov <= 13500);
-			mergeButton(VG_DPAD_DOWN, pov >= 13500 && pov <= 22500);
-			mergeButton(VG_DPAD_LEFT, pov >= 22500 && pov <= 31500);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_UP,
+				pov >= 31500 || pov <= 4500
+			);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_RIGHT,
+				pov >= 4500 && pov <= 13500
+			);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_DOWN,
+				pov >= 13500 && pov <= 22500
+			);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_LEFT,
+				pov >= 22500 && pov <= 31500
+			);
 		}
 
 		if (!hasPov) {
-			mergeButton(VG_DPAD_UP, (state.rgbButtons[10] & 0x80) != 0);
-			mergeButton(VG_DPAD_DOWN, (state.rgbButtons[11] & 0x80) != 0);
-			mergeButton(VG_DPAD_LEFT, (state.rgbButtons[12] & 0x80) != 0);
-			mergeButton(VG_DPAD_RIGHT, (state.rgbButtons[13] & 0x80) != 0);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_UP,
+				(state.rgbButtons[10] & 0x80) != 0
+			);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_DOWN,
+				(state.rgbButtons[11] & 0x80) != 0
+			);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_LEFT,
+				(state.rgbButtons[12] & 0x80) != 0
+			);
+			mergeButton(
+				GAMEPAD_INPUT_CODE::DPAD_RIGHT,
+				(state.rgbButtons[13] & 0x80) != 0
+			);
 		}
 
 		const float lx = ApplySignedDeadzone(
@@ -652,9 +739,11 @@ namespace Unnamed {
 		float       lt      = 0.0f;
 		float       rt      = 0.0f;
 		const float slider0 = NormalizeDirectInputUnsignedAxis(
-			state.rglSlider[0]);
+			state.rglSlider[0]
+		);
 		const float slider1 = NormalizeDirectInputUnsignedAxis(
-			state.rglSlider[1]);
+			state.rglSlider[1]
+		);
 		if (slider0 > 0.01f || slider1 > 0.01f) {
 			lt = ApplyUnsignedDeadzone(slider0, kDirectInputTriggerDeadzone);
 			rt = ApplyUnsignedDeadzone(slider1, kDirectInputTriggerDeadzone);
@@ -670,12 +759,12 @@ namespace Unnamed {
 			);
 		}
 
-		mergeAnalog(VG_LX, lx);
-		mergeAnalog(VG_LY, ly);
-		mergeAnalog(VG_RX, rx);
-		mergeAnalog(VG_RY, ry);
-		mergeAnalog(VG_LT, lt);
-		mergeAnalog(VG_RT, rt);
+		mergeAnalog(GAMEPAD_INPUT_CODE::LX, lx);
+		mergeAnalog(GAMEPAD_INPUT_CODE::LY, ly);
+		mergeAnalog(GAMEPAD_INPUT_CODE::RX, rx);
+		mergeAnalog(GAMEPAD_INPUT_CODE::RY, ry);
+		mergeAnalog(GAMEPAD_INPUT_CODE::LT, lt);
+		mergeAnalog(GAMEPAD_INPUT_CODE::RT, rt);
 	}
 
 	void GamepadDevice::ResetFrameStates() {
@@ -683,29 +772,38 @@ namespace Unnamed {
 		mAnalogStates.clear();
 
 		for (const auto& key : kSupportedKeys) {
-			if (IsAnalogCode(key.code)) {
-				mAnalogStates.emplace(key.code, 0.0f);
+			auto code = static_cast<GAMEPAD_INPUT_CODE>(key.code);
+			if (IsAnalogCode(code)) {
+				mAnalogStates.emplace(code, 0.0f);
 			} else {
-				mButtonStates.emplace(key.code, false);
+				mButtonStates.emplace(code, false);
 			}
 		}
 	}
 
 	void GamepadDevice::UpdateDirectionalButtonsFromAnalogs() {
-		const float lx = mAnalogStates[VG_LX];
-		const float ly = mAnalogStates[VG_LY];
-		const float rx = mAnalogStates[VG_RX];
-		const float ry = mAnalogStates[VG_RY];
+		const float lx = mAnalogStates[GAMEPAD_INPUT_CODE::LX];
+		const float ly = mAnalogStates[GAMEPAD_INPUT_CODE::LY];
+		const float rx = mAnalogStates[GAMEPAD_INPUT_CODE::RX];
+		const float ry = mAnalogStates[GAMEPAD_INPUT_CODE::RY];
 
-		mButtonStates[VG_LSTICK_LEFT]  = lx < -kAxisAsButtonThreshold;
-		mButtonStates[VG_LSTICK_RIGHT] = lx > kAxisAsButtonThreshold;
-		mButtonStates[VG_LSTICK_UP]    = ly > kAxisAsButtonThreshold;
-		mButtonStates[VG_LSTICK_DOWN]  = ly < -kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::LSTICK_LEFT] =
+				lx < -kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::LSTICK_RIGHT] =
+				lx > kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::LSTICK_UP] =
+				ly > kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::LSTICK_DOWN] =
+				ly < -kAxisAsButtonThreshold;
 
-		mButtonStates[VG_RSTICK_LEFT]  = rx < -kAxisAsButtonThreshold;
-		mButtonStates[VG_RSTICK_RIGHT] = rx > kAxisAsButtonThreshold;
-		mButtonStates[VG_RSTICK_UP]    = ry > kAxisAsButtonThreshold;
-		mButtonStates[VG_RSTICK_DOWN]  = ry < -kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::RSTICK_LEFT] =
+				rx < -kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::RSTICK_RIGHT] =
+				rx > kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::RSTICK_UP] =
+				ry > kAxisAsButtonThreshold;
+		mButtonStates[GAMEPAD_INPUT_CODE::RSTICK_DOWN] =
+				ry < -kAxisAsButtonThreshold;
 	}
 
 	void GamepadDevice::ApplyRumble() {
@@ -715,7 +813,8 @@ namespace Unnamed {
 
 		const double now = NowSeconds();
 		std::erase_if(
-			mRumbleEvents, [now](const RumbleEvent& event) {
+			mRumbleEvents,
+			[now](const RumbleEvent& event) {
 				return event.endTime <= now;
 			}
 		);
@@ -742,7 +841,7 @@ namespace Unnamed {
 
 		// 振動は最後に操作された XInput パッドを優先する
 		if (mHasLastActiveXInputUser &&
-		    mXInputConnected[mLastActiveXInputUser]) {
+			mXInputConnected[mLastActiveXInputUser]) {
 			ApplyRumbleToXInput(mLastActiveXInputUser, low, high);
 			return;
 		}
@@ -787,7 +886,7 @@ namespace Unnamed {
 		const float sign       = value >= 0 ? 1.0f : -1.0f;
 		const float max        = value >= 0 ? 32767.0f : 32768.0f;
 		const float normalized = static_cast<float>(absValue - deadzone) /
-		                         (max - static_cast<float>(deadzone));
+				(max - static_cast<float>(deadzone));
 		return sign * std::clamp(normalized, 0.0f, 1.0f);
 	}
 
@@ -819,14 +918,21 @@ namespace Unnamed {
 		).count();
 	}
 
-	bool GamepadDevice::IsAnalogCode(const uint32_t code) {
-		return code == VG_LX || code == VG_LY ||
-		       code == VG_RX || code == VG_RY ||
-		       code == VG_LT || code == VG_RT;
+	bool GamepadDevice::IsAnalogCode(const GAMEPAD_INPUT_CODE code) {
+		return
+				code == GAMEPAD_INPUT_CODE::LX ||
+				code == GAMEPAD_INPUT_CODE::LY ||
+				code == GAMEPAD_INPUT_CODE::RX ||
+				code == GAMEPAD_INPUT_CODE::RY ||
+				code == GAMEPAD_INPUT_CODE::LT ||
+				code == GAMEPAD_INPUT_CODE::RT;
 	}
 
-	bool GamepadDevice::IsStickCode(const uint32_t code) {
-		return code == VG_LX || code == VG_LY ||
-		       code == VG_RX || code == VG_RY;
+	bool GamepadDevice::IsStickCode(const GAMEPAD_INPUT_CODE code) {
+		return
+				code == GAMEPAD_INPUT_CODE::LX ||
+				code == GAMEPAD_INPUT_CODE::LY ||
+				code == GAMEPAD_INPUT_CODE::RX ||
+				code == GAMEPAD_INPUT_CODE::RY;
 	}
 }

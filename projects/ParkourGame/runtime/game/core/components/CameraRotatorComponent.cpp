@@ -198,22 +198,15 @@ namespace Unnamed {
 			return;
 		}
 
-		constexpr InputKey mouseX = {
-			.device = InputDeviceType::MOUSE,
-			.code   = VM_X
-		};
-		constexpr InputKey mouseY = {
-			.device = InputDeviceType::MOUSE,
-			.code   = VM_Y
-		};
-		constexpr InputKey gamepadLookX = {
-			.device = InputDeviceType::GAMEPAD,
-			.code   = VG_RX
-		};
-		constexpr InputKey gamepadLookY = {
-			.device = InputDeviceType::GAMEPAD,
-			.code   = VG_RY
-		};
+		constexpr InputKey mouseX = InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_X);
+		constexpr InputKey mouseY = InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_Y);
+
+		constexpr InputKey gamepadLookX = InputKey::Gamepad(
+			GAMEPAD_INPUT_CODE::RX
+		);
+		constexpr InputKey gamepadLookY = InputKey::Gamepad(
+			GAMEPAD_INPUT_CODE::RY
+		);
 
 		mInput->BindAxis2D("Mouse", mouseX, INPUT_AXIS::X, 1.0f);
 		mInput->BindAxis2D("Mouse", mouseY, INPUT_AXIS::Y, 1.0f);
@@ -238,4 +231,3 @@ namespace Unnamed {
 
 	REGISTER_COMPONENT(CameraRotatorComponent);
 }
-

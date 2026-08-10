@@ -4,7 +4,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
+#include <engine/unnamed/subsystem/input/InputKey.h>
 
 namespace Unnamed {
 	/// @brief 入力キー構造体のハッシュ関数

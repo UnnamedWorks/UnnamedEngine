@@ -1,24 +1,9 @@
 #pragma once
-#include <cstdint>
 #include <vector>
 
+#include "engine/unnamed/subsystem/input/InputKey.h"
+
 namespace Unnamed {
-	enum class InputDeviceType {
-		KEYBOARD,
-		MOUSE,
-		GAMEPAD
-	};
-
-	/// @brief 入力デバイス種別とデバイス内キーコードの組を識別します
-	struct InputKey {
-		InputDeviceType device;
-		uint32_t        code;
-
-		bool operator==(const InputKey& other) const {
-			return device == other.device && code == other.code;
-		}
-	};
-
 	/// @brief 入力デバイス基底クラス
 	class BaseInputDevice {
 	public:

@@ -1,22 +1,13 @@
 #pragma once
 #include <cstdint>
-#include <array>
 #include <memory>
 #include <string>
 #include <unordered_map>
 
 #include <engine/IWin32MsgListener.h>
+#include <engine/unnamed/subsystem/input/InputSnapshot.h>
 #include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
-
-/// @brief InputKeyのデバイス種別とコードを連想コンテナ用ハッシュへ変換します
-template <>
-struct std::hash<Unnamed::InputKey> {
-	size_t operator()(const Unnamed::InputKey& key) const noexcept {
-		return hash<uint32_t>()(static_cast<uint32_t>(key.device)) ^ hash<
-			       uint32_t>()(key.code << 1);
-	}
-};
 
 namespace Unnamed {
 	class ConCommand;
@@ -43,9 +34,7 @@ namespace Unnamed {
 	};
 
 	enum class BINDING_TYPE : uint8_t {
-		ACTION,
-		AXIS_1D,
-		AXIS_2D
+		ACTION, AXIS_1D, AXIS_2D
 	};
 
 	/// @brief 入力バインディング構造体
@@ -204,13 +193,17 @@ namespace Unnamed {
 
 		[[nodiscard]] Vec2 GetMouseClientPosition() const;
 		[[nodiscard]] Vec2 GetMouseClientViewportSize() const;
-		[[nodiscard]] bool IsMouseButtonDown(uint32_t mouseVirtualKey) const;
+		[[nodiscard]] bool IsMouseButtonDown(MOUSE_INPUT_CODE code) const;
 		[[nodiscard]] bool WasMouseButtonPressed(
-			uint32_t mouseVirtualKey
+			MOUSE_INPUT_CODE code
 		) const;
 		[[nodiscard]] bool WasMouseButtonReleased(
-			uint32_t mouseVirtualKey
+			MOUSE_INPUT_CODE code
 		) const;
+
+		/// @brief 現在フレームの物理入力状態を取得します。
+		/// @return 入力状態のスナップショット
+		[[nodiscard]] const InputSnapshot& GetSnapshot() const;
 
 	private:
 		[[nodiscard]] bool ResolveMouseCursorLockState() const;
@@ -241,14 +234,13 @@ namespace Unnamed {
 		/// @brief コマンドバインドを押下/解放に応じて実行します
 		void ProcessCommandBinds();
 
+		InputSnapshot mSnapshot;
+
 		std::unordered_map<std::string, InputActionState> mActionStates;
 		std::unordered_map<std::string, InputAxisState1D> mAxisStates1D;
 		std::unordered_map<std::string, InputAxisState2D> mAxisStates2D;
 
-		std::vector<InputBinding> mBindings;
-		std::unordered_map<InputKey, bool> mCurrentKeyStates;
-		std::unordered_map<InputKey, bool> mPreviousKeyStates;
-		std::unordered_map<InputKey, float> mAnalogValues;
+		std::vector<InputBinding>                              mBindings;
 		std::unordered_map<InputKey, std::vector<std::string>> mCommandBinds;
 
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;
@@ -266,15 +258,10 @@ namespace Unnamed {
 		bool            mMouseCursorLockOverrideMode = false;
 		bool            mMouseCursorVisible          = false;
 
-		Vec2                mMouseClientPosition       = Vec2::zero;
-		Vec2                mMouseClientViewportSize   = Vec2::zero;
-		bool                mMouseViewportRectOverride = false;
-		Vec2                mMouseViewportOrigin       = Vec2::zero;
-		Vec2                mMouseViewportSizeOverride = Vec2::zero;
-		Vec2                mMouseViewportVirtualSize  = Vec2::zero;
-		std::array<bool, 5> mMouseButtonDown           = {};
-		std::array<bool, 5> mMouseButtonPressed        = {};
-		std::array<bool, 5> mMouseButtonReleased       = {};
+		bool mMouseViewportRectOverride = false;
+		Vec2 mMouseViewportOrigin       = Vec2::zero;
+		Vec2 mMouseViewportSizeOverride = Vec2::zero;
+		Vec2 mMouseViewportVirtualSize  = Vec2::zero;
 
 		std::unique_ptr<ConCommand> mBindCommand;
 		std::unique_ptr<ConCommand> mUnbindCommand;

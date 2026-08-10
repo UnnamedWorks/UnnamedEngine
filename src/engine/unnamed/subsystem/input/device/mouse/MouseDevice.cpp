@@ -15,13 +15,10 @@ namespace Unnamed {
 		rid.usUsagePage = 0x01;
 		rid.usUsage     = 0x02; // マウス
 		// ウィンドウ外のマウス移動を取得する
-		rid.dwFlags    = 0; // RIDEV_INPUTSINK;
-		rid.hwndTarget = hWnd;
+		rid.dwFlags     = 0;    // RIDEV_INPUTSINK;
+		rid.hwndTarget  = hWnd;
 		RegisterRawInputDevices(&rid, 1, sizeof(rid));
 	}
-
-	/// @brief デストラクタ
-	MouseDevice::~MouseDevice() = default;
 
 	/// @brief 更新処理
 	void MouseDevice::Update() {
@@ -37,34 +34,34 @@ namespace Unnamed {
 
 		// 第5ボタンまでの状態を取得 マウスの形をしたキーボードは知らん
 		if (mouseData.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) {
-			mButtonStates[VK_LBUTTON] = true;
+			mButtonStates[MOUSE_INPUT_CODE::LEFT_BUTTON] = true;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) {
-			mButtonStates[VK_LBUTTON] = false;
+			mButtonStates[MOUSE_INPUT_CODE::LEFT_BUTTON] = false;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) {
-			mButtonStates[VK_RBUTTON] = true;
+			mButtonStates[MOUSE_INPUT_CODE::RIGHT_BUTTON] = true;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) {
-			mButtonStates[VK_RBUTTON] = false;
+			mButtonStates[MOUSE_INPUT_CODE::RIGHT_BUTTON] = false;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) {
-			mButtonStates[VK_MBUTTON] = true;
+			mButtonStates[MOUSE_INPUT_CODE::MIDDLE_BUTTON] = true;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) {
-			mButtonStates[VK_MBUTTON] = false;
+			mButtonStates[MOUSE_INPUT_CODE::MIDDLE_BUTTON] = false;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
-			mButtonStates[VK_XBUTTON1] = true;
+			mButtonStates[MOUSE_INPUT_CODE::X1_BUTTON] = true;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_BUTTON_4_UP) {
-			mButtonStates[VK_XBUTTON1] = false;
+			mButtonStates[MOUSE_INPUT_CODE::X1_BUTTON] = false;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_BUTTON_5_DOWN) {
-			mButtonStates[VK_XBUTTON2] = true;
+			mButtonStates[MOUSE_INPUT_CODE::X2_BUTTON] = true;
 		}
 		if (mouseData.usButtonFlags & RI_MOUSE_BUTTON_5_UP) {
-			mButtonStates[VK_XBUTTON2] = false;
+			mButtonStates[MOUSE_INPUT_CODE::X2_BUTTON] = false;
 		}
 
 		// リモートセッションではマウス移動が正しく取得できないため、移動量の更新をスキップする
@@ -91,11 +88,11 @@ namespace Unnamed {
 			const SHORT wheelData = static_cast<SHORT>(mouseData.usButtonData);
 			mWheelRemainder       += wheelData;
 			if (wheelData > 0) {
-				mButtonStates[VM_WHEEL_UP]   = true;
-				mButtonStates[VM_WHEEL_DOWN] = false;
+				mButtonStates[MOUSE_INPUT_CODE::WHEEL_UP]   = true;
+				mButtonStates[MOUSE_INPUT_CODE::WHEEL_DOWN] = false;
 			} else if (wheelData < 0) {
-				mButtonStates[VM_WHEEL_DOWN] = true;
-				mButtonStates[VM_WHEEL_UP]   = false;
+				mButtonStates[MOUSE_INPUT_CODE::WHEEL_DOWN] = true;
+				mButtonStates[MOUSE_INPUT_CODE::WHEEL_UP] = false;
 			}
 			const int clicks = mWheelRemainder / WHEEL_DELTA;
 			if (clicks != 0) {
@@ -112,7 +109,8 @@ namespace Unnamed {
 		if (key.device != InputDeviceType::MOUSE) {
 			return false;
 		}
-		const auto it = mButtonStates.find(key.code);
+		const auto code = static_cast<MOUSE_INPUT_CODE>(key.code);
+		const auto it   = mButtonStates.find(code);
 		return it != mButtonStates.end() ? it->second : false;
 	}
 
@@ -123,13 +121,16 @@ namespace Unnamed {
 		if (key.device != InputDeviceType::MOUSE) {
 			return 0.0f;
 		}
-		if (key.code == VM_X) {
+
+		auto code = static_cast<MOUSE_INPUT_CODE>(key.code);
+
+		if (code == MOUSE_INPUT_CODE::AXIS_X) {
 			return static_cast<float>(mDeltaX);
 		}
-		if (key.code == VM_Y) {
+		if (code == MOUSE_INPUT_CODE::AXIS_Y) {
 			return static_cast<float>(mDeltaY);
 		}
-		if (key.code == VM_WHEEL) {
+		if (code == MOUSE_INPUT_CODE::WHEEL) {
 			return static_cast<float>(mWheelDelta);
 		}
 		return 0.0f;
@@ -139,16 +140,16 @@ namespace Unnamed {
 	/// @return サポートされているキーのベクター
 	std::vector<InputKey> MouseDevice::GetSupportedKeys() const {
 		return {
-			{.device = InputDeviceType::MOUSE, .code = VM_1},
-			{.device = InputDeviceType::MOUSE, .code = VM_2},
-			{.device = InputDeviceType::MOUSE, .code = VM_3},
-			{.device = InputDeviceType::MOUSE, .code = VM_4},
-			{.device = InputDeviceType::MOUSE, .code = VM_5},
-			{.device = InputDeviceType::MOUSE, .code = VM_X},
-			{.device = InputDeviceType::MOUSE, .code = VM_Y},
-			{.device = InputDeviceType::MOUSE, .code = VM_WHEEL},
-			{.device = InputDeviceType::MOUSE, .code = VM_WHEEL_UP},
-			{.device = InputDeviceType::MOUSE, .code = VM_WHEEL_DOWN}
+			InputKey::Mouse(MOUSE_INPUT_CODE::LEFT_BUTTON),
+			InputKey::Mouse(MOUSE_INPUT_CODE::RIGHT_BUTTON),
+			InputKey::Mouse(MOUSE_INPUT_CODE::MIDDLE_BUTTON),
+			InputKey::Mouse(MOUSE_INPUT_CODE::X1_BUTTON),
+			InputKey::Mouse(MOUSE_INPUT_CODE::X2_BUTTON),
+			InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_X),
+			InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_Y),
+			InputKey::Mouse(MOUSE_INPUT_CODE::WHEEL),
+			InputKey::Mouse(MOUSE_INPUT_CODE::WHEEL_UP),
+			InputKey::Mouse(MOUSE_INPUT_CODE::WHEEL_DOWN),
 		};
 	}
 
@@ -169,10 +170,10 @@ namespace Unnamed {
 
 	/// @brief デルタ値をリセットする
 	void MouseDevice::ResetDelta() {
-		mDeltaX                      = 0;
-		mDeltaY                      = 0;
-		mWheelDelta                  = 0;
-		mButtonStates[VM_WHEEL_UP]   = false;
-		mButtonStates[VM_WHEEL_DOWN] = false;
+		mDeltaX                                     = 0;
+		mDeltaY                                     = 0;
+		mWheelDelta                                 = 0;
+		mButtonStates[MOUSE_INPUT_CODE::WHEEL_UP]   = false;
+		mButtonStates[MOUSE_INPUT_CODE::WHEEL_DOWN] = false;
 	}
 }

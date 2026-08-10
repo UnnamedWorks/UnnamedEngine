@@ -5,9 +5,6 @@
 #include <algorithm>
 #include <iterator>
 
-#include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
-#include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
-
 namespace Unnamed {
 	std::optional<InputKey> KeyNameTable::FromString(
 		const std::string_view name
@@ -155,7 +152,7 @@ namespace Unnamed {
 		KEY("end", KEYBOARD, VK_END),          // End
 		KEY("pause", KEYBOARD, VK_PAUSE),      // Pause
 
-		// Numpad 出荷時にあんまり使ってほしくないキー。使うならデバッグ目的にしよう
+		// Numpad。 出荷時にあんまり使ってほしくないキー。使うならデバッグ目的にしよう
 		KEY("kp_end", KEYBOARD, VK_NUMPAD1),        // Numpad End
 		KEY("kp_downarrow", KEYBOARD, VK_NUMPAD2),  // Numpad Down
 		KEY("kp_pgdn", KEYBOARD, VK_NUMPAD3),       // Numpad Page Down
@@ -176,47 +173,47 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// マウス
 		//---------------------------------------------------------------------
-		KEY("mwheeldown", MOUSE, VM_WHEEL_DOWN), // ホイール下
-		KEY("mwheelup", MOUSE, VM_WHEEL_UP),     // ホイール上
-		KEY("mouse1", MOUSE, VK_LBUTTON),        // 左ボタン
-		KEY("mouse2", MOUSE, VK_RBUTTON),        // 右ボタン
-		KEY("mouse3", MOUSE, VK_MBUTTON),        // 中央ボタン
-		KEY("mouse4", MOUSE, VK_XBUTTON1),       // サイドボタン1 手前
-		KEY("mouse5", MOUSE, VK_XBUTTON2),       // サイドボタン2 奥
+		KEY("mwheeldown", MOUSE, MOUSE_INPUT_CODE::WHEEL_DOWN), // ホイール下
+		KEY("mwheelup", MOUSE, MOUSE_INPUT_CODE::WHEEL_UP),     // ホイール上
+		KEY("mouse1", MOUSE, MOUSE_INPUT_CODE::LEFT_BUTTON),    // 左ボタン
+		KEY("mouse2", MOUSE, MOUSE_INPUT_CODE::RIGHT_BUTTON),   // 右ボタン
+		KEY("mouse3", MOUSE, MOUSE_INPUT_CODE::MIDDLE_BUTTON),  // 中央ボタン
+		KEY("mouse4", MOUSE, MOUSE_INPUT_CODE::X1_BUTTON),      // サイドボタン1 手前
+		KEY("mouse5", MOUSE, MOUSE_INPUT_CODE::X2_BUTTON),      // サイドボタン2 奥
 
 		//---------------------------------------------------------------------
 		// ゲームパッド
 		//---------------------------------------------------------------------
-		KEY("gp_a", GAMEPAD, VG_A),
-		KEY("gp_b", GAMEPAD, VG_B),
-		KEY("gp_x", GAMEPAD, VG_X),
-		KEY("gp_y", GAMEPAD, VG_Y),
-		KEY("gp_lb", GAMEPAD, VG_LB),
-		KEY("gp_rb", GAMEPAD, VG_RB),
-		KEY("gp_back", GAMEPAD, VG_BACK),
-		KEY("gp_start", GAMEPAD, VG_START),
-		KEY("gp_ls", GAMEPAD, VG_LS),
-		KEY("gp_rs", GAMEPAD, VG_RS),
-		KEY("gp_dpad_up", GAMEPAD, VG_DPAD_UP),
-		KEY("gp_dpad_down", GAMEPAD, VG_DPAD_DOWN),
-		KEY("gp_dpad_left", GAMEPAD, VG_DPAD_LEFT),
-		KEY("gp_dpad_right", GAMEPAD, VG_DPAD_RIGHT),
+		KEY("gp_a", GAMEPAD, GAMEPAD_INPUT_CODE::A),
+		KEY("gp_b", GAMEPAD, GAMEPAD_INPUT_CODE::B),
+		KEY("gp_x", GAMEPAD, GAMEPAD_INPUT_CODE::X),
+		KEY("gp_y", GAMEPAD, GAMEPAD_INPUT_CODE::Y),
+		KEY("gp_lb", GAMEPAD, GAMEPAD_INPUT_CODE::LB),
+		KEY("gp_rb", GAMEPAD, GAMEPAD_INPUT_CODE::RB),
+		KEY("gp_back", GAMEPAD, GAMEPAD_INPUT_CODE::BACK),
+		KEY("gp_start", GAMEPAD, GAMEPAD_INPUT_CODE::START),
+		KEY("gp_ls", GAMEPAD, GAMEPAD_INPUT_CODE::LS),
+		KEY("gp_rs", GAMEPAD, GAMEPAD_INPUT_CODE::RS),
+		KEY("gp_dpad_up", GAMEPAD, GAMEPAD_INPUT_CODE::DPAD_UP),
+		KEY("gp_dpad_down", GAMEPAD, GAMEPAD_INPUT_CODE::DPAD_DOWN),
+		KEY("gp_dpad_left", GAMEPAD, GAMEPAD_INPUT_CODE::DPAD_LEFT),
+		KEY("gp_dpad_right", GAMEPAD, GAMEPAD_INPUT_CODE::DPAD_RIGHT),
 
-		KEY("gp_lx", GAMEPAD, VG_LX),
-		KEY("gp_ly", GAMEPAD, VG_LY),
-		KEY("gp_rx", GAMEPAD, VG_RX),
-		KEY("gp_ry", GAMEPAD, VG_RY),
-		KEY("gp_lt", GAMEPAD, VG_LT),
-		KEY("gp_rt", GAMEPAD, VG_RT),
+		KEY("gp_lx", GAMEPAD, GAMEPAD_INPUT_CODE::LX),
+		KEY("gp_ly", GAMEPAD, GAMEPAD_INPUT_CODE::LY),
+		KEY("gp_rx", GAMEPAD, GAMEPAD_INPUT_CODE::RX),
+		KEY("gp_ry", GAMEPAD, GAMEPAD_INPUT_CODE::RY),
+		KEY("gp_lt", GAMEPAD, GAMEPAD_INPUT_CODE::LT),
+		KEY("gp_rt", GAMEPAD, GAMEPAD_INPUT_CODE::RT),
 
-		KEY("gp_lleft", GAMEPAD, VG_LSTICK_LEFT),
-		KEY("gp_lright", GAMEPAD, VG_LSTICK_RIGHT),
-		KEY("gp_lup", GAMEPAD, VG_LSTICK_UP),
-		KEY("gp_ldown", GAMEPAD, VG_LSTICK_DOWN),
-		KEY("gp_rleft", GAMEPAD, VG_RSTICK_LEFT),
-		KEY("gp_rright", GAMEPAD, VG_RSTICK_RIGHT),
-		KEY("gp_rup", GAMEPAD, VG_RSTICK_UP),
-		KEY("gp_rdown", GAMEPAD, VG_RSTICK_DOWN),
+		KEY("gp_lleft", GAMEPAD, GAMEPAD_INPUT_CODE::LSTICK_LEFT),
+		KEY("gp_lright", GAMEPAD, GAMEPAD_INPUT_CODE::LSTICK_RIGHT),
+		KEY("gp_lup", GAMEPAD, GAMEPAD_INPUT_CODE::LSTICK_UP),
+		KEY("gp_ldown", GAMEPAD, GAMEPAD_INPUT_CODE::LSTICK_DOWN),
+		KEY("gp_rleft", GAMEPAD, GAMEPAD_INPUT_CODE::RSTICK_LEFT),
+		KEY("gp_rright", GAMEPAD, GAMEPAD_INPUT_CODE::RSTICK_RIGHT),
+		KEY("gp_rup", GAMEPAD, GAMEPAD_INPUT_CODE::RSTICK_UP),
+		KEY("gp_rdown", GAMEPAD, GAMEPAD_INPUT_CODE::RSTICK_DOWN),
 	};
 
 	const std::unordered_map<InputKey, std::string_view, KeyHash>
