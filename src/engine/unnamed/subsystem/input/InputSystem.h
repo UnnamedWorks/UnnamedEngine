@@ -8,45 +8,10 @@
 #include <engine/unnamed/subsystem/input/InputSnapshot.h>
 #include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
+#include <engine/unnamed/subsystem/input/mapping/InputMappingSystem.h>
 
 namespace Unnamed {
 	class ConCommand;
-
-	/// @brief 入力アクション状態構造体
-	struct InputActionState {
-		bool bIsPressed  = false;
-		bool bIsHeld     = false;
-		bool bIsReleased = false;
-	};
-
-	/// @brief 1D入力軸状態構造体
-	struct InputAxisState1D {
-		float value = 0.0f;
-	};
-
-	enum class INPUT_AXIS : uint8_t {
-		X, Y
-	};
-
-	/// @brief 2D入力軸状態構造体
-	struct InputAxisState2D {
-		Vec2 value = Vec2::zero;
-	};
-
-	enum class BINDING_TYPE : uint8_t {
-		ACTION, AXIS_1D, AXIS_2D
-	};
-
-	/// @brief 入力バインディング構造体
-	struct InputBinding {
-		InputKey     key;
-		BINDING_TYPE type;
-		std::string  target;
-
-		float      scale   = 1.0f;
-		Vec2       scale2D = Vec2::one;
-		INPUT_AXIS axis    = INPUT_AXIS::X;
-	};
 
 	/// @brief InputSystemは、入力の初期化、フレーム更新、および終了順序を統括します
 	class InputSystem final : public ISubsystem, public IWin32MsgListener {
@@ -216,31 +181,12 @@ namespace Unnamed {
 		/// @param rawInput RAWINPUT構造体
 		void OnRawInput(const RAWINPUT& rawInput) const;
 
-		/// @brief ハードウェアキーの現在の状態を取得します
-		/// @param key 取得するキー
-		/// @return 押下されているならtrue
-		[[nodiscard]] bool GetHardwareKeyState(const InputKey& key) const;
-
-		/// @brief アナログ値を取得します
-		/// @param key 取得するキー
-		/// @return アナログ値
-		[[nodiscard]] float GetAnalogValue(const InputKey& key) const;
-
-		/// @brief 仮想キーコードからキー名を取得します
-		/// @param virtualKey 仮想キーコード
-		/// @return キー名の文字列
-		static std::string GetKeyName(const UINT& virtualKey);
-
 		/// @brief コマンドバインドを押下/解放に応じて実行します
 		void ProcessCommandBinds();
 
-		InputSnapshot mSnapshot;
+		InputSnapshot      mSnapshot;
+		InputMappingSystem mMappingSystem;
 
-		std::unordered_map<std::string, InputActionState> mActionStates;
-		std::unordered_map<std::string, InputAxisState1D> mAxisStates1D;
-		std::unordered_map<std::string, InputAxisState2D> mAxisStates2D;
-
-		std::vector<InputBinding>                              mBindings;
 		std::unordered_map<InputKey, std::vector<std::string>> mCommandBinds;
 
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;
