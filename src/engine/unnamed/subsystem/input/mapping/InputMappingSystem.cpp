@@ -1,65 +1,338 @@
 #include "pch.h"
 #include "InputMappingSystem.h"
 
+#include <algorithm>
+#include <ranges>
+#include <utility>
+
 namespace Unnamed {
+	InputMappingSystem::InputMappingSystem() {
+		mDefaultContextId = CreateContext("Default");
+		PushContext(mDefaultContextId);
+	}
+
 	void InputMappingSystem::BeginFrame() {
-		mDefaultContext.BeginFrame();
+		for (const InputContextId contextId : mContextStack) {
+			// ReSharper disable once CppLocalVariableMayBeConst
+			auto* entry = FindContext(contextId);
+
+			if (!entry) {
+				continue;
+			}
+
+			entry->context->BeginFrame();
+		}
 	}
 
 	void InputMappingSystem::Evaluate(const InputSnapshot& snapshot) {
-		mDefaultContext.Evaluate(snapshot);
+		for (auto it = mContextStack.rbegin(); it != mContextStack.rend(); ++
+		     it) {
+			const auto* entry = FindContext(*it);
+
+			if (!entry) {
+				continue;
+			}
+
+			entry->context->Evaluate(snapshot);
+		}
+	}
+
+	// ReSharper disable once CppMemberFunctionMayBeConst
+	void InputMappingSystem::ResetStates() {
+		for (const auto& entry : mContexts) {
+			entry.context->ResetStates();
+		}
+	}
+
+	InputContextId InputMappingSystem::CreateContext(const std::string& name) {
+		const InputContextId id = {
+			.value = mNextContextId++
+		};
+
+		ContextEntry entry = {
+			.id      = id,
+			.name    = name,
+			.context = std::make_unique<InputMappingContext>()
+		};
+
+		mContexts.emplace_back(std::move(entry));
+
+		return id;
+	}
+
+	bool InputMappingSystem::DestroyContext(InputContextId contextId) {
+		if (contextId == mDefaultContextId) {
+			return false;
+		}
+
+		std::erase(mContextStack, contextId);
+
+		const auto oldSize = mContexts.size();
+
+		std::erase_if(
+			mContexts,
+			[contextId](const ContextEntry& entry) {
+				return entry.id == contextId;
+			}
+		);
+
+		return oldSize != mContexts.size();
+	}
+
+	bool InputMappingSystem::PushContext(InputContextId contextId) {
+		if (!FindContext(contextId)) {
+			return false;
+		}
+
+		std::erase(mContextStack, contextId);
+
+		mContextStack.emplace_back(contextId);
+
+		return true;
+	}
+
+	bool InputMappingSystem::PopContext(const InputContextId contextId) {
+		// 移行期間中はDefaultを残す
+		if (contextId == mDefaultContextId) {
+			return false;
+		}
+
+		const auto oldSize = mContextStack.size();
+
+		std::erase(mContextStack, contextId);
+
+		if (oldSize == mContextStack.size()) {
+			return false;
+		}
+
+		if (const auto* entry = FindContext(contextId)) {
+			entry->context->ResetStates();
+		}
+
+		return true;
+	}
+
+	bool InputMappingSystem::IsContextActive(
+		const InputContextId contextId
+	) const {
+		return std::ranges::find(mContextStack, contextId) !=
+		       mContextStack.end();
+	}
+
+	InputContextId InputMappingSystem::GetDefaultContextId() const {
+		return mDefaultContextId;
+	}
+
+	void InputMappingSystem::BindAction(
+		const InputContextId contextId, const std::string& action,
+		const InputKey&      key
+	) {
+		// ReSharper disable once CppLocalVariableMayBeConst
+		auto* entry = FindContext(contextId);
+
+		if (!entry) {
+			return;
+		}
+
+		entry->context->BindAction(action, key);
+	}
+
+	void InputMappingSystem::BindAxis1D(
+		const InputContextId contextId, const std::string& axis,
+		const InputKey&      key, const float              scale
+	) {
+		// ReSharper disable once CppLocalVariableMayBeConst
+		auto* entry = FindContext(contextId);
+
+		if (!entry) {
+			return;
+		}
+
+		entry->context->BindAxis1D(axis, key, scale);
+	}
+
+	void InputMappingSystem::BindAxis2D(
+		const InputContextId contextId, const std::string& axis,
+		const InputKey&      key, const INPUT_AXIS         axisType,
+		const float          scale
+	) {
+		// ReSharper disable once CppLocalVariableMayBeConst
+		auto* entry = FindContext(contextId);
+
+		if (!entry) {
+			return;
+		}
+
+		entry->context->BindAxis2D(axis, key, axisType, scale);
+	}
+
+	void InputMappingSystem::Unbind(
+		const InputContextId contextId, const std::string& target
+	) {
+		// ReSharper disable once CppLocalVariableMayBeConst
+		auto* entry = FindContext(contextId);
+
+		if (!entry) {
+			return;
+		}
+
+		entry->context->Unbind(target);
+	}
+
+	bool InputMappingSystem::IsPressed(
+		const InputContextId contextId, const std::string& action
+	) const {
+		const auto* entry = FindContext(contextId);
+
+		if (!entry || !IsContextActive(contextId)) {
+			return false;
+		}
+
+		return entry->context->IsPressed(action);
+	}
+
+	bool InputMappingSystem::IsHeld(
+		const InputContextId contextId, const std::string& action
+	) const {
+		const auto* entry = FindContext(contextId);
+
+		if (!entry || !IsContextActive(contextId)) {
+			return false;
+		}
+
+		return entry->context->IsHeld(action);
+	}
+
+	bool InputMappingSystem::IsReleased(
+		const InputContextId contextId, const std::string& action
+	) const {
+		const auto* entry = FindContext(contextId);
+
+		if (!entry || !IsContextActive(contextId)) {
+			return false;
+		}
+
+		return entry->context->IsReleased(action);
+	}
+
+	float InputMappingSystem::Axis1D(
+		const InputContextId contextId, const std::string& axis
+	) const {
+		const auto* entry = FindContext(contextId);
+
+		if (!entry || !IsContextActive(contextId)) {
+			return 0.0f;
+		}
+
+		return entry->context->Axis1D(axis);
+	}
+
+	Vec2 InputMappingSystem::Axis2D(
+		const InputContextId contextId, const std::string& axis
+	) const {
+		const auto* entry = FindContext(contextId);
+
+		if (!entry || !IsContextActive(contextId)) {
+			return Vec2::zero;
+		}
+
+		return entry->context->Axis2D(axis);
+	}
+
+	void InputMappingSystem::HandleExternalAction(
+		const InputContextId contextId, const std::string& action,
+		const bool           pressed
+	) {
+		// ReSharper disable once CppLocalVariableMayBeConst
+		auto* entry = FindContext(contextId);
+
+		if (!entry || !IsContextActive(contextId)) {
+			return;
+		}
+
+		entry->context->HandleExternalAction(action, pressed);
 	}
 
 	void InputMappingSystem::BindAction(
 		const std::string& action, const InputKey& key
 	) {
-		mDefaultContext.BindAction(action, key);
+		BindAction(mDefaultContextId, action, key);
 	}
 
 	void InputMappingSystem::BindAxis1D(
 		const std::string& axis, const InputKey& key, const float scale
 	) {
-		mDefaultContext.BindAxis1D(axis, key, scale);
+		BindAxis1D(mDefaultContextId, axis, key, scale);
 	}
 
 	void InputMappingSystem::BindAxis2D(
 		const std::string& axis, const InputKey& key, const INPUT_AXIS axisType,
-		const float              scale
+		const float        scale
 	) {
-		mDefaultContext.BindAxis2D(axis, key, axisType, scale);
+		BindAxis2D(mDefaultContextId, axis, key, axisType, scale);
 	}
 
 	void InputMappingSystem::Unbind(const std::string& target) {
-		mDefaultContext.Unbind(target);
+		Unbind(mDefaultContextId, target);
+	}
+
+	bool InputMappingSystem::IsPressed(const std::string& action) const {
+		return IsPressed(mDefaultContextId, action);
+	}
+
+	bool InputMappingSystem::IsHeld(const std::string& action) const {
+		return IsHeld(mDefaultContextId, action);
+	}
+
+	bool InputMappingSystem::IsReleased(const std::string& action) const {
+		return IsReleased(mDefaultContextId, action);
+	}
+
+	float InputMappingSystem::Axis1D(const std::string& axis) const {
+		return Axis1D(mDefaultContextId, axis);
+	}
+
+	Vec2 InputMappingSystem::Axis2D(const std::string& axis) const {
+		return Axis2D(mDefaultContextId, axis);
 	}
 
 	void InputMappingSystem::HandleExternalAction(
 		const std::string& action, const bool pressed
 	) {
-		mDefaultContext.HandleExternalAction(action, pressed);
+		HandleExternalAction(mDefaultContextId, action, pressed);
 	}
 
-	bool InputMappingSystem::IsPressed(const std::string& action) const {
-		return mDefaultContext.IsPressed(action);
+	InputMappingSystem::ContextEntry* InputMappingSystem::FindContext(
+		InputContextId contextId
+	) {
+		const auto it = std::ranges::find_if(
+			mContexts,
+			[contextId](const ContextEntry& entry) {
+				return entry.id == contextId;
+			}
+		);
+
+		if (it == mContexts.end()) {
+			return nullptr;
+		}
+
+		return &*it;
 	}
 
-	bool InputMappingSystem::IsHeld(const std::string& action) const {
-		return mDefaultContext.IsHeld(action);
-	}
+	const InputMappingSystem::ContextEntry* InputMappingSystem::FindContext(
+		InputContextId contextId
+	) const {
+		const auto it = std::ranges::find_if(
+			mContexts,
+			[contextId](const ContextEntry& entry) {
+				return entry.id == contextId;
+			}
+		);
 
-	bool InputMappingSystem::IsReleased(const std::string& action) const {
-		return mDefaultContext.IsReleased(action);
-	}
+		if (it == mContexts.end()) {
+			return nullptr;
+		}
 
-	float InputMappingSystem::Axis1D(const std::string& axis) const {
-		return mDefaultContext.Axis1D(axis);
-	}
-
-	Vec2 InputMappingSystem::Axis2D(const std::string& axis) const {
-		return mDefaultContext.Axis2D(axis);
-	}
-
-	void InputMappingSystem::ResetStates() {
-		mDefaultContext.ResetStates();
+		return &*it;
 	}
 }

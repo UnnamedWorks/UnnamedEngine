@@ -43,4 +43,15 @@ namespace Unnamed {
 		Vec2       scale2D = Vec2::one;
 		INPUT_AXIS axis    = INPUT_AXIS::X;
 	};
+
+	/// @brief InputMappingContextの識別用ID
+	struct InputContextId {
+		uint64_t value = 0;
+
+		[[nodiscard]] constexpr bool IsValid() const noexcept {
+			return value != 0;
+		}
+
+		constexpr bool operator==(const InputContextId&) const = default;
+	};
 }
