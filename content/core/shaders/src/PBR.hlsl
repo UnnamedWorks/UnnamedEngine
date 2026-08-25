@@ -162,6 +162,15 @@ struct MaterialEvalInput {
 	float  shadowFactor;
 };
 
+float3 ApplySceneFog(float3 lit, float3 positionWS) {
+	float  distanceWS = length(gCameraPos - positionWS);
+	float  fogStart   = 6.5024f;
+	float  fogEnd     = 416.1536f;
+	float3 fogColor   = float3(0.78f, 0.22f, 0.92f);
+	float  fogFactor  = saturate((distanceWS - fogStart) / (fogEnd - fogStart));
+	return lerp(lit, fogColor, fogFactor * 0.5f);
+}
+
 float3 EvaluateUnlit(MaterialEvalInput input) {
 	return input.albedo + input.emissive;
 }
@@ -277,5 +286,7 @@ float4 PsMain(VsOut i) : SV_Target {
 	float3 lit = (gDomainMode < 0.5f || gShadingModel > 1.5f) ?
 		             EvaluateUnlit(input) :
 		             EvaluateLitPBR(input);
+
+	lit = ApplySceneFog(lit, i.positionWS);
 	return float4(lit, saturate(gOpacity * baseColor.a));
 }
