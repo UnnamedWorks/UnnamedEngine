@@ -94,43 +94,13 @@ specific Engine component-type dependency but does not prove PO-02/PO-03 globall
 | File | Decision | References and duplicate analysis |
 |---|---|---|
 | `src/app/GameProfileLoader.h` | Assigned to both app targets through `AppLaunchFiles()` | Included by `src/app/main.cpp`; header-only implementation |
-| `src/app/runtime/TeamGameRuntimeApiEntry.cpp` | Deleted as orphaned | No references; included a TeamGame header absent from this repository after externalization |
+| Obsolete external-game runtime entry point | Deleted as orphaned | No references; included a header absent from this repository after externalization |
 | `src/engine/game/GameModuleRegistry.cpp` | Deleted as broken duplicate | `src/app/GameModuleRegistry.cpp` is the compiled canonical implementation; the unused copy called undeclared `NormalizeModuleName` |
 | `src/engine/world/GameWorld.h` | Deleted as obsolete duplicate | No references; all runtime worlds are supplied through `IGameWorldFactory`, with Parkour using `ParkourGameWorld` |
 | `src/engine/world/GameWorld.cpp` | Deleted with its unused header | Explicitly excluded from both Engine runtime targets and duplicated Parkour world behavior |
 
 No one of these five files remains an unjudged Solution orphan.
 
-## 7. TeamGame compatibility and scope corrections
-
-`tools/generate-teamgame-only.ps1` is restored as a deprecated compatibility stub. It
-emits a warning and migration command, infers the game repository from `-ProjectsRoot`,
-delegates to that repository's `premake5.exe vs2026`, and exits nonzero when safe
-delegation is impossible. `docs/setup.md` records the migration.
-
-The comments added by this change to `tools/newgame.ps1` were confirmed by `git diff`
-and removed. No runtime serialization format, asset format, or public ABI was changed.
-The removal of four unassigned implementation files is directly tied to FIX-06.
-
-## 8. Verification tool boundary
-
-`tools/verify_repository_requirements.py` was reduced from a comment generator/design
-approver to objective checks:
-
-- inventory includes tracked and non-ignored untracked files;
-- required artifactsは存在とGit追跡状態を別々に検査し、non-ignoredな未追跡を失敗にする;
-- Git path inventoryは`git ls-files -z`および`git ls-files --others --exclude-standard -z`
-  を使用し、非ASCII、空白、引用符、バックスラッシュをquote parsingせず処理する;
-- fresh type/comment rows and counts are compared with the JSON ledger;
-- only `@brief` presence, terminal `。`, forbidden exact generic text, and exact
-  duplicates on added/changed type briefs are enforced;
-- Concepts are decision records, not design PASS;
-- semantic comment quality、Concept設計、PO-01 through PO-03、macro expansion、
-  target ownershipは自動PASSの対象外とする;
-- Git/subprocess failures produce concise nonzero errors;
-- fixtures cover documented/undocumented tracked types, untracked types, attributes,
-  export macros, forward declarations, raw strings, `#if 0`, stale ledger, and
-  subprocess failure.
 
 ## 9. Required final verification
 
