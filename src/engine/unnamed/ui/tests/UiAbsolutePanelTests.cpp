@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "UiAbsolutePanelTests.h"
 
+#include "../../../../core/UnnamedMacro.h"
+
 #include "../core/UiElement.h"
 
 #include "../layout/UiAbsolutePanel.h"
@@ -109,24 +111,24 @@ namespace Unnamed {
 			const UiAbsoluteSlot* slot =
 				panel.GetChildSlot(child);
 
-			assert(slot != nullptr);
+			UASSERT(slot != nullptr);
 
-			assert(
+			UASSERT(
 				slot->rect.pos.x ==
 				0.0f
 			);
 
-			assert(
+			UASSERT(
 				slot->rect.pos.y ==
 				0.0f
 			);
 
-			assert(
+			UASSERT(
 				slot->rect.size.x ==
 				0.0f
 			);
 
-			assert(
+			UASSERT(
 				slot->rect.size.y ==
 				0.0f
 			);
@@ -150,24 +152,24 @@ namespace Unnamed {
 			const UiAbsoluteSlot* slot =
 				panel.GetChildSlot(child);
 
-			assert(slot != nullptr);
+			UASSERT(slot != nullptr);
 
-			assert(
+			UASSERT(
 				slot->rect.pos.x ==
 				10.0f
 			);
 
-			assert(
+			UASSERT(
 				slot->rect.pos.y ==
 				20.0f
 			);
 
-			assert(
+			UASSERT(
 				slot->rect.size.x ==
 				100.0f
 			);
 
-			assert(
+			UASSERT(
 				slot->rect.size.y ==
 				50.0f
 			);
@@ -213,39 +215,39 @@ namespace Unnamed {
 					Vec2(1000.0f, 1000.0f)
 				);
 
-			assert(
+			UASSERT(
 				first.GetMeasureCallCount() == 1
 			);
 
-			assert(
+			UASSERT(
 				second.GetMeasureCallCount() == 1
 			);
 
-			assert(
+			UASSERT(
 				first.GetLastAvailableSize().x ==
 				100.0f
 			);
 
-			assert(
+			UASSERT(
 				first.GetLastAvailableSize().y ==
 				50.0f
 			);
 
-			assert(
+			UASSERT(
 				second.GetLastAvailableSize().x ==
 				40.0f
 			);
 
-			assert(
+			UASSERT(
 				second.GetLastAvailableSize().y ==
 				30.0f
 			);
 
 			// max(10 + 100, 200 + 40)
-			assert(desiredSize.x == 240.0f);
+			UASSERT(desiredSize.x == 240.0f);
 
 			// max(20 + 50, 5 + 30)
-			assert(desiredSize.y == 70.0f);
+			UASSERT(desiredSize.y == 70.0f);
 		}
 
 		void TestCollapsedChildDoesNotContribute() {
@@ -283,10 +285,10 @@ namespace Unnamed {
 					Vec2(2000.0f, 2000.0f)
 				);
 
-			assert(desiredSize.x == 60.0f);
-			assert(desiredSize.y == 30.0f);
+			UASSERT(desiredSize.x == 60.0f);
+			UASSERT(desiredSize.y == 30.0f);
 
-			assert(
+			UASSERT(
 				collapsed.GetMeasureCallCount() ==
 				0
 			);
@@ -316,10 +318,10 @@ namespace Unnamed {
 					Vec2(1000.0f, 1000.0f)
 				);
 
-			assert(desiredSize.x == 300.0f);
-			assert(desiredSize.y == 130.0f);
+			UASSERT(desiredSize.x == 300.0f);
+			UASSERT(desiredSize.y == 130.0f);
 
-			assert(
+			UASSERT(
 				hidden.GetMeasureCallCount() == 1
 			);
 		}
@@ -358,27 +360,27 @@ namespace Unnamed {
 			 * 親の(500, 300)は加算されない。
 			 * Child LayoutRectは親ローカル座標。
 			 */
-			assert(
+			UASSERT(
 				childRect.pos.x ==
 				10.0f
 			);
 
-			assert(
+			UASSERT(
 				childRect.pos.y ==
 				20.0f
 			);
 
-			assert(
+			UASSERT(
 				childRect.size.x ==
 				100.0f
 			);
 
-			assert(
+			UASSERT(
 				childRect.size.y ==
 				50.0f
 			);
 
-			assert(
+			UASSERT(
 				child.GetArrangeCallCount() == 1
 			);
 		}
@@ -413,15 +415,15 @@ namespace Unnamed {
 					)
 				);
 
-			assert(succeeded);
+			UASSERT(succeeded);
 
-			assert(
+			UASSERT(
 				panel.IsInvalidated(
 					UI_INVALIDATION::MEASURE
 				)
 			);
 
-			assert(
+			UASSERT(
 				panel.IsInvalidated(
 					UI_INVALIDATION::ARRANGE
 				)
@@ -454,9 +456,9 @@ namespace Unnamed {
 					slot
 				);
 
-			assert(succeeded);
+			UASSERT(succeeded);
 
-			assert(
+			UASSERT(
 				panel.GetInvalidation() ==
 				UI_INVALIDATION::NONE
 			);
@@ -479,7 +481,7 @@ namespace Unnamed {
 
 			static_cast<void>(panel.Measure(Vec2(1000.0f, 1000.0f)));
 
-			assert(
+			UASSERT(
 				child.GetMeasureCallCount() == 1
 			);
 
@@ -495,16 +497,16 @@ namespace Unnamed {
 
 			static_cast<void>(panel.Measure(Vec2(1000.0f, 1000.0f)));
 
-			assert(
+			UASSERT(
 				child.GetMeasureCallCount() == 2
 			);
 
-			assert(
+			UASSERT(
 				child.GetLastAvailableSize().x ==
 				200.0f
 			);
 
-			assert(
+			UASSERT(
 				child.GetLastAvailableSize().y ==
 				80.0f
 			);
@@ -540,30 +542,30 @@ namespace Unnamed {
 			const std::unique_ptr<UiElement> removed =
 				panel.RemoveChild(first);
 
-			assert(removed != nullptr);
-			assert(panel.GetChildCount() == 1);
+			UASSERT(removed != nullptr);
+			UASSERT(panel.GetChildCount() == 1);
 
 			const UiAbsoluteSlot* secondSlot =
 				panel.GetChildSlot(second);
 
-			assert(secondSlot != nullptr);
+			UASSERT(secondSlot != nullptr);
 
-			assert(
+			UASSERT(
 				secondSlot->rect.pos.x ==
 				200.0f
 			);
 
-			assert(
+			UASSERT(
 				secondSlot->rect.pos.y ==
 				300.0f
 			);
 
-			assert(
+			UASSERT(
 				secondSlot->rect.size.x ==
 				400.0f
 			);
 
-			assert(
+			UASSERT(
 				secondSlot->rect.size.y ==
 				500.0f
 			);
@@ -584,9 +586,9 @@ namespace Unnamed {
 					)
 				);
 
-			assert(!succeeded);
+			UASSERT(!succeeded);
 
-			assert(
+			UASSERT(
 				panel.GetChildSlot(unrelated) ==
 				nullptr
 			);

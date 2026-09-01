@@ -64,14 +64,14 @@ namespace Unnamed {
 		void TestInitialInvalidation() {
 			const TestInvalidationElement element;
 
-			assert(
+			UASSERT(
 				HasAllInvalidation( element.GetInvalidation(), UI_INVALIDATION::
 					ALL )
 			);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 		}
 
 		void TestClearInvalidation() {
@@ -80,11 +80,11 @@ namespace Unnamed {
 				UI_INVALIDATION::MEASURE | UI_INVALIDATION::PAINT
 			);
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(!element.IsInvalidated (UI_INVALIDATION::PAINT));
+			UASSERT(!element.IsInvalidated (UI_INVALIDATION::PAINT));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 		}
 
 		void TestOpacityInvalidation() {
@@ -96,20 +96,20 @@ namespace Unnamed {
 
 			element.SetOpacity(0.5f);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(element.GetInvalidatedCount() == 1);
+			UASSERT(element.GetInvalidatedCount() == 1);
 
-			assert(element.GetLastNewInvalidation() == UI_INVALIDATION::PAINT);
+			UASSERT(element.GetLastNewInvalidation() == UI_INVALIDATION::PAINT);
 
 			// 同じ値を設定しても追加通知されない。
 			element.SetOpacity(0.5f);
 
-			assert(element.GetInvalidatedCount() == 1);
+			UASSERT(element.GetInvalidatedCount() == 1);
 		}
 
 		void TestEnabledInvalidation() {
@@ -119,11 +119,11 @@ namespace Unnamed {
 
 			element.SetEnabled(false);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 		}
 
 		void TestHitTestVisibleInvalidation() {
@@ -133,7 +133,7 @@ namespace Unnamed {
 
 			element.SetHitTestVisible(false);
 
-			assert(element.GetInvalidation() == UI_INVALIDATION::HIT_TEST);
+			UASSERT(element.GetInvalidation() == UI_INVALIDATION::HIT_TEST);
 		}
 
 		void TestHiddenVisibilityInvalidation() {
@@ -142,13 +142,13 @@ namespace Unnamed {
 			element.ClearForTest(UI_INVALIDATION::ALL);
 			element.SetVisibility(UI_VISIBILITY::HIDDEN);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 		}
 
 		void TestCollapsedVisibilityInvalidation() {
@@ -157,13 +157,13 @@ namespace Unnamed {
 			element.ClearForTest(UI_INVALIDATION::ALL);
 			element.SetVisibility(UI_VISIBILITY::COLLAPSED);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 		}
 
 		void TestMeasurePropagation() {
@@ -180,15 +180,15 @@ namespace Unnamed {
 
 			child.Invalidate(UI_INVALIDATION::MEASURE);
 
-			assert(child.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(child.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(parent.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(parent.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(parent.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(parent.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(root.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(root.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 		}
 
 		void TestPaintDoesNotPropagate() {
@@ -202,9 +202,9 @@ namespace Unnamed {
 
 			child.Invalidate(UI_INVALIDATION::PAINT);
 
-			assert(child.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(child.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(!root.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(!root.IsInvalidated( UI_INVALIDATION::PAINT ));
 		}
 
 		void TestAddChildInvalidation() {
@@ -214,17 +214,17 @@ namespace Unnamed {
 
 			root.CreateChild<TestInvalidationElement>();
 
-			assert(root.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::MEASURE ));
 
-			assert(root.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(root.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(root.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 
-			assert(root.IsInvalidated( UI_INVALIDATION::CHILDREN ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::CHILDREN ));
 
-			assert(root.GetChildrenChangedCount() == 1);
+			UASSERT(root.GetChildrenChangedCount() == 1);
 		}
 
 		void TestClearChildrenNotification() {
@@ -239,11 +239,11 @@ namespace Unnamed {
 
 			root.ClearChildren();
 
-			assert(root.GetChildCount() == 0);
+			UASSERT(root.GetChildCount() == 0);
 
-			assert(root.GetChildrenChangedCount() == countBeforeClear + 1);
+			UASSERT(root.GetChildrenChangedCount() == countBeforeClear + 1);
 
-			assert(root.IsInvalidated( UI_INVALIDATION::CHILDREN ));
+			UASSERT(root.IsInvalidated( UI_INVALIDATION::CHILDREN ));
 		}
 
 		void TestMeasureAlsoInvalidatesArrange() {
@@ -257,19 +257,19 @@ namespace Unnamed {
 				UI_INVALIDATION::MEASURE
 			);
 
-			assert(
+			UASSERT(
 				element.IsInvalidated(
 					UI_INVALIDATION::MEASURE
 				)
 			);
 
-			assert(
+			UASSERT(
 				element.IsInvalidated(
 					UI_INVALIDATION::ARRANGE
 				)
 			);
 
-			assert(
+			UASSERT(
 				!element.IsInvalidated(
 					UI_INVALIDATION::PAINT
 				)

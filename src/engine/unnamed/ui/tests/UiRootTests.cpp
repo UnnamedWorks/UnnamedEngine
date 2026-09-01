@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "UiRootTests.h"
 
+#include "../../../../core/UnnamedMacro.h"
+
 #include "../core/UiElement.h"
 #include "../core/UiRoot.h"
 
@@ -84,17 +86,17 @@ namespace Unnamed {
 		void TestViewportSize() {
 			UiRoot root;
 
-			assert(!root.HasViewportSize());
+			UASSERT(!root.HasViewportSize());
 
 			root.SetViewportSize(Vec2(1280.0f, 720.0f));
 
-			assert(root.HasViewportSize());
+			UASSERT(root.HasViewportSize());
 
-			assert(root.GetViewportSize().x == 1280.0f);
+			UASSERT(root.GetViewportSize().x == 1280.0f);
 
-			assert(root.GetViewportSize().y == 720.0f);
+			UASSERT(root.GetViewportSize().y == 720.0f);
 
-			assert(root.IsLayoutInvalidated());
+			UASSERT(root.IsLayoutInvalidated());
 		}
 
 		void TestFirstLayout() {
@@ -104,21 +106,21 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.performedLayout);
-			assert(result.stabilized);
-			assert(result.passCount == 1);
+			UASSERT(result.performedLayout);
+			UASSERT(result.stabilized);
+			UASSERT(result.passCount == 1);
 
 			const UiRect& rootRect = root.GetLayoutRect();
 
-			assert(rootRect.pos.x == 0.0f);
+			UASSERT(rootRect.pos.x == 0.0f);
 
-			assert(rootRect.pos.y == 0.0f);
+			UASSERT(rootRect.pos.y == 0.0f);
 
-			assert(rootRect.size.x == 1280.0f);
+			UASSERT(rootRect.size.x == 1280.0f);
 
-			assert(rootRect.size.y == 720.0f);
+			UASSERT(rootRect.size.y == 720.0f);
 
-			assert(!root.IsLayoutInvalidated());
+			UASSERT(!root.IsLayoutInvalidated());
 		}
 
 		void TestCleanLayoutDoesNoWork() {
@@ -130,9 +132,9 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(!result.performedLayout);
-			assert(result.stabilized);
-			assert(result.passCount == 0);
+			UASSERT(!result.performedLayout);
+			UASSERT(result.stabilized);
+			UASSERT(result.passCount == 0);
 		}
 
 		void TestRootLaysOutChild() {
@@ -147,25 +149,25 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.stabilized);
+			UASSERT(result.stabilized);
 
-			assert(child.GetMeasureCallCount() == 1);
+			UASSERT(child.GetMeasureCallCount() == 1);
 
-			assert(child.GetArrangeCallCount() == 1);
+			UASSERT(child.GetArrangeCallCount() == 1);
 
-			assert(child.GetLastAvailableSize().x == 100.0f);
+			UASSERT(child.GetLastAvailableSize().x == 100.0f);
 
-			assert(child.GetLastAvailableSize().y == 50.0f);
+			UASSERT(child.GetLastAvailableSize().y == 50.0f);
 
 			const UiRect& childRect = child.GetLayoutRect();
 
-			assert(childRect.pos.x == 10.0f);
+			UASSERT(childRect.pos.x == 10.0f);
 
-			assert(childRect.pos.y == 20.0f);
+			UASSERT(childRect.pos.y == 20.0f);
 
-			assert(childRect.size.x == 100.0f);
+			UASSERT(childRect.size.x == 100.0f);
 
-			assert(childRect.size.y == 50.0f);
+			UASSERT(childRect.size.y == 50.0f);
 		}
 
 		void TestViewportResize() {
@@ -188,20 +190,20 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.performedLayout);
-			assert(result.stabilized);
+			UASSERT(result.performedLayout);
+			UASSERT(result.stabilized);
 
-			assert(root.GetLayoutRect().size.x == 1920.0f);
+			UASSERT(root.GetLayoutRect().size.x == 1920.0f);
 
-			assert(root.GetLayoutRect().size.y == 1080.0f);
+			UASSERT(root.GetLayoutRect().size.y == 1080.0f);
 
 			/*
 			 * Absolute Slotのサイズは変わっていないため、
 			 * 子自身のMeasure/Arrangeキャッシュは再利用される。
 			 */
-			assert(child.GetMeasureCallCount() == childMeasureCount);
+			UASSERT(child.GetMeasureCallCount() == childMeasureCount);
 
-			assert(child.GetArrangeCallCount() == childArrangeCount);
+			UASSERT(child.GetArrangeCallCount() == childArrangeCount);
 		}
 
 		void TestChildMeasureInvalidation() {
@@ -220,14 +222,14 @@ namespace Unnamed {
 
 			child.Invalidate(UI_INVALIDATION::MEASURE);
 
-			assert(root.IsLayoutInvalidated());
+			UASSERT(root.IsLayoutInvalidated());
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.performedLayout);
-			assert(result.stabilized);
+			UASSERT(result.performedLayout);
+			UASSERT(result.stabilized);
 
-			assert(child.GetMeasureCallCount() == oldMeasureCount + 1);
+			UASSERT(child.GetMeasureCallCount() == oldMeasureCount + 1);
 		}
 
 		void TestLayoutCanRequireSecondPass() {
@@ -247,11 +249,11 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.performedLayout);
-			assert(result.stabilized);
-			assert(result.passCount == 2);
+			UASSERT(result.performedLayout);
+			UASSERT(result.stabilized);
+			UASSERT(result.passCount == 2);
 
-			assert(child.GetMeasureCallCount() == 2);
+			UASSERT(child.GetMeasureCallCount() == 2);
 		}
 
 		void TestSameViewportDoesNotInvalidate() {
@@ -263,12 +265,12 @@ namespace Unnamed {
 
 			root.SetViewportSize(Vec2(1280.0f, 720.0f));
 
-			assert(!root.IsLayoutInvalidated());
+			UASSERT(!root.IsLayoutInvalidated());
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(!result.performedLayout);
-			assert(result.passCount == 0);
+			UASSERT(!result.performedLayout);
+			UASSERT(result.passCount == 0);
 		}
 
 		void TestZeroSizeViewport() {
@@ -278,11 +280,11 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.stabilized);
+			UASSERT(result.stabilized);
 
-			assert(root.GetLayoutRect().size.x == 0.0f);
+			UASSERT(root.GetLayoutRect().size.x == 0.0f);
 
-			assert(root.GetLayoutRect().size.y == 0.0f);
+			UASSERT(root.GetLayoutRect().size.y == 0.0f);
 		}
 	}
 

@@ -82,15 +82,15 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 
-			assert(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
+			UASSERT(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
 
-			assert(
+			UASSERT(
 				AreRectsNearlyEqual( element.GetLastOnArrangeRect(), finalRect )
 			);
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 		}
 
 		void TestLayoutRectIsUpdatedBeforeOnArrange() {
@@ -103,7 +103,7 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(
+			UASSERT(
 				AreRectsNearlyEqual( element.GetObservedLayoutRect(), finalRect
 				)
 			);
@@ -121,7 +121,7 @@ namespace Unnamed {
 			element.Arrange(finalRect);
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 		}
 
 		void TestRectChangeRearranges() {
@@ -141,7 +141,7 @@ namespace Unnamed {
 				}
 			);
 
-			assert(element.GetArrangeCallCount() == 2);
+			UASSERT(element.GetArrangeCallCount() == 2);
 
 			element.Arrange(
 				UiRect{
@@ -150,7 +150,7 @@ namespace Unnamed {
 				}
 			);
 
-			assert(element.GetArrangeCallCount() == 3);
+			UASSERT(element.GetArrangeCallCount() == 3);
 		}
 
 		void TestArrangeInvalidationReruns() {
@@ -163,13 +163,13 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 
 			element.Invalidate(UI_INVALIDATION::ARRANGE);
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 2);
+			UASSERT(element.GetArrangeCallCount() == 2);
 		}
 
 		void TestLayoutChangeInvalidation() {
@@ -184,15 +184,15 @@ namespace Unnamed {
 				}
 			);
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::MEASURE ));
 		}
 
 		void TestSameRectArrangeDoesNotDirtyGeometry() {
@@ -211,13 +211,13 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 		}
 
 		void TestHiddenStillArranges() {
@@ -232,9 +232,9 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 
-			assert(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
+			UASSERT(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
 		}
 
 		void TestCollapsedSkipsOnArrange() {
@@ -249,19 +249,19 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 0);
+			UASSERT(element.GetArrangeCallCount() == 0);
 
 			const UiRect& layoutRect = element.GetLayoutRect();
 
-			assert(IsNearlyEqual( layoutRect.pos.x, 10.0f ));
+			UASSERT(IsNearlyEqual( layoutRect.pos.x, 10.0f ));
 
-			assert(IsNearlyEqual( layoutRect.pos.y, 20.0f ));
+			UASSERT(IsNearlyEqual( layoutRect.pos.y, 20.0f ));
 
-			assert(IsNearlyEqual( layoutRect.size.x, 0.0f ));
+			UASSERT(IsNearlyEqual( layoutRect.size.x, 0.0f ));
 
-			assert(IsNearlyEqual( layoutRect.size.y, 0.0f ));
+			UASSERT(IsNearlyEqual( layoutRect.size.y, 0.0f ));
 
-			assert(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(!element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 		}
 
 		void TestCollapsedToVisibleRearranges() {
@@ -276,15 +276,15 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 0);
+			UASSERT(element.GetArrangeCallCount() == 0);
 
 			element.SetVisibility(UI_VISIBILITY::VISIBLE);
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 
-			assert(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
+			UASSERT(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
 		}
 
 		void TestInvalidationDuringArrangeRemains() {
@@ -299,13 +299,13 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::ARRANGE ));
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 2);
+			UASSERT(element.GetArrangeCallCount() == 2);
 		}
 
 		void TestZeroSizeArrange() {
@@ -318,9 +318,9 @@ namespace Unnamed {
 
 			element.Arrange(finalRect);
 
-			assert(element.GetArrangeCallCount() == 1);
+			UASSERT(element.GetArrangeCallCount() == 1);
 
-			assert(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
+			UASSERT(AreRectsNearlyEqual( element.GetLayoutRect(), finalRect ));
 		}
 	}
 

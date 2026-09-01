@@ -128,7 +128,7 @@ namespace Unnamed {
 			root.SetViewportSize(Vec2(1280.0f, 720.0f));
 			const UiLayoutPassResult layoutResult = root.PerformLayout();
 
-			assert(layoutResult.stabilized);
+			UASSERT(layoutResult.stabilized);
 
 			static_cast<void>(UiTree::UpdateTransforms(root));
 		}
@@ -141,13 +141,13 @@ namespace Unnamed {
 		) {
 			const auto commands = commandList.GetCommands();
 
-			assert(index < commands.size());
+			UASSERT(index < commands.size());
 
 			const auto* command = std::get_if<UiSolidRectPaintCommand>(
 				&commands[index]
 			);
 
-			assert(command != nullptr);
+			UASSERT(command != nullptr);
 
 			return *command;
 		}
@@ -155,7 +155,7 @@ namespace Unnamed {
 		void TestCommandListBasics() {
 			UiPaintCommandList commandList;
 
-			assert(commandList.IsEmpty());
+			UASSERT(commandList.IsEmpty());
 
 			commandList.AddSolidRect(
 				UiRect{
@@ -170,12 +170,12 @@ namespace Unnamed {
 				}
 			);
 
-			assert(!commandList.IsEmpty());
-			assert(commandList.GetCommandCount() == 1);
+			UASSERT(!commandList.IsEmpty());
+			UASSERT(commandList.GetCommandCount() == 1);
 
 			commandList.Clear();
 
-			assert(commandList.IsEmpty());
+			UASSERT(commandList.IsEmpty());
 		}
 
 		void TestEmptyAndTransparentCommandsAreSkipped() {
@@ -197,13 +197,13 @@ namespace Unnamed {
 				UiColor::Transparent()
 			);
 
-			assert(commandList.IsEmpty());
+			UASSERT(commandList.IsEmpty());
 		}
 
 		void TestPaintUsesWorldRect() {
 			UiRoot root;
 
-			TestPaintElement& child = root.CreateChildAt<TestPaintElement>(
+			const TestPaintElement& child = root.CreateChildAt<TestPaintElement>(
 				MakeSlot(10.0f, 20.0f, 100.0f, 50.0f)
 			);
 
@@ -216,18 +216,18 @@ namespace Unnamed {
 				commandList
 			);
 
-			assert(result.mEmittedCommandCount == 1);
-			assert(commandList.GetCommandCount() == 1);
-			assert(child.GetPaintCallCount() == 1);
+			UASSERT(result.mEmittedCommandCount == 1);
+			UASSERT(commandList.GetCommandCount() == 1);
+			UASSERT(child.GetPaintCallCount() == 1);
 
 			const auto& command = GetSolidRectCommand(commandList, 0);
 
-			assert(command.mRect.pos.x == 10.0f);
-			assert(command.mRect.pos.y == 20.0f);
-			assert(command.mRect.size.x == 100.0f);
-			assert(command.mRect.size.y == 50.0f);
+			UASSERT(command.mRect.pos.x == 10.0f);
+			UASSERT(command.mRect.pos.y == 20.0f);
+			UASSERT(command.mRect.size.x == 100.0f);
+			UASSERT(command.mRect.size.y == 50.0f);
 
-			assert(!child.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(!child.IsInvalidated( UI_INVALIDATION::PAINT ));
 		}
 
 		void TestParentPaintsBeforeChild() {
@@ -247,25 +247,25 @@ namespace Unnamed {
 
 			static_cast<void>(UiTree::BuildPaintCommands(root, commandList));
 
-			assert(commandList.GetCommandCount() == 2);
+			UASSERT(commandList.GetCommandCount() == 2);
 
 			const auto& panelCommand = GetSolidRectCommand(commandList, 0);
 
 			const auto& childCommand = GetSolidRectCommand(commandList, 1);
 
-			assert(panelCommand.mRect.pos.x == 100.0f);
+			UASSERT(panelCommand.mRect.pos.x == 100.0f);
 
-			assert(panelCommand.mRect.pos.y == 50.0f);
+			UASSERT(panelCommand.mRect.pos.y == 50.0f);
 
-			assert(childCommand.mRect.pos.x == 110.0f);
+			UASSERT(childCommand.mRect.pos.x == 110.0f);
 
-			assert(childCommand.mRect.pos.y == 70.0f);
+			UASSERT(childCommand.mRect.pos.y == 70.0f);
 		}
 
 		void TestPaintCacheReuse() {
 			UiRoot root;
 
-			TestPaintElement& child = root.CreateChildAt<TestPaintElement>(
+			const TestPaintElement& child = root.CreateChildAt<TestPaintElement>(
 				MakeSlot(10.0f, 20.0f, 100.0f, 50.0f)
 			);
 
@@ -282,12 +282,12 @@ namespace Unnamed {
 				commandList
 			);
 
-			assert(commandList.GetCommandCount() == 1);
+			UASSERT(commandList.GetCommandCount() == 1);
 
-			assert(child.GetPaintCallCount() == paintCallCount);
+			UASSERT(child.GetPaintCallCount() == paintCallCount);
 
-			assert(result.mRebuiltCacheCount == 0);
-			assert(result.mReusedCacheCount == 2);
+			UASSERT(result.mRebuiltCacheCount == 0);
+			UASSERT(result.mReusedCacheCount == 2);
 		}
 
 		void TestPaintInvalidationRebuildsOnlyElement() {
@@ -319,15 +319,15 @@ namespace Unnamed {
 				commandList
 			);
 
-			assert(result.mRebuiltCacheCount == 1);
-			assert(result.mReusedCacheCount == 1);
+			UASSERT(result.mRebuiltCacheCount == 1);
+			UASSERT(result.mReusedCacheCount == 1);
 
-			assert(child.GetPaintCallCount() == oldPaintCallCount + 1);
+			UASSERT(child.GetPaintCallCount() == oldPaintCallCount + 1);
 
 			const auto& command = GetSolidRectCommand(commandList, 0);
 
-			assert(command.mColor.mRed == 0.0f);
-			assert(command.mColor.mGreen == 1.0f);
+			UASSERT(command.mColor.mRed == 0.0f);
+			UASSERT(command.mColor.mGreen == 1.0f);
 		}
 
 		void TestEffectiveOpacity() {
@@ -359,11 +359,11 @@ namespace Unnamed {
 
 			static_cast<void>(UiTree::BuildPaintCommands(root, commandList));
 
-			assert(commandList.GetCommandCount() == 1);
+			UASSERT(commandList.GetCommandCount() == 1);
 
 			const auto& command = GetSolidRectCommand(commandList, 0);
 
-			assert(IsNearlyEqual( command.mColor.mAlpha, 0.2f ));
+			UASSERT(IsNearlyEqual( command.mColor.mAlpha, 0.2f ));
 		}
 
 		void TestHiddenElementSkipsSubtree() {
@@ -373,7 +373,7 @@ namespace Unnamed {
 				MakeSlot(100.0f, 50.0f, 400.0f, 300.0f)
 			);
 
-			TestPaintElement& child = panel.CreateChildAt<TestPaintElement>(
+			const TestPaintElement& child = panel.CreateChildAt<TestPaintElement>(
 				MakeSlot(10.0f, 20.0f, 100.0f, 50.0f)
 			);
 
@@ -397,13 +397,13 @@ namespace Unnamed {
 				commandList
 			);
 
-			assert(commandList.IsEmpty());
+			UASSERT(commandList.IsEmpty());
 
-			assert(result .mSkippedInvisibleSubtreeCount == 1);
+			UASSERT(result .mSkippedInvisibleSubtreeCount == 1);
 
-			assert(panel.GetPaintCallCount() == panelPaintCount);
+			UASSERT(panel.GetPaintCallCount() == panelPaintCount);
 
-			assert(child.GetPaintCallCount() == childPaintCount);
+			UASSERT(child.GetPaintCallCount() == childPaintCount);
 		}
 
 		void TestVisibleAfterHiddenPaintsAgain() {
@@ -421,7 +421,7 @@ namespace Unnamed {
 
 			static_cast<void>(UiTree::BuildPaintCommands(root, commandList));
 
-			assert(commandList.IsEmpty());
+			UASSERT(commandList.IsEmpty());
 
 			child.SetVisibility(UI_VISIBILITY::VISIBLE);
 
@@ -430,8 +430,8 @@ namespace Unnamed {
 				commandList
 			);
 
-			assert(commandList.GetCommandCount() == 1);
-			assert(result.mRebuiltCacheCount == 1);
+			UASSERT(commandList.GetCommandCount() == 1);
+			UASSERT(result.mRebuiltCacheCount == 1);
 		}
 
 		void TestRoundedRectIsNormalized() {
@@ -451,15 +451,15 @@ namespace Unnamed {
 
 			const auto commands = commandList.GetCommands();
 
-			assert(commands.size() == 1);
+			UASSERT(commands.size() == 1);
 
 			const auto* command = std::get_if<UiSolidRoundedRectPaintCommand>(
 				&commands[0]
 			);
 
-			assert(command != nullptr);
+			UASSERT(command != nullptr);
 
-			assert(command ->mRoundedRect .radii .topLeft == 20.0f);
+			UASSERT(command ->mRoundedRect .radii .topLeft == 20.0f);
 		}
 
 		void TestPaintInvalidationDuringPaintRemains() {
@@ -477,7 +477,7 @@ namespace Unnamed {
 
 			static_cast<void>(UiTree::BuildPaintCommands(root, commandList));
 
-			assert(child.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(child.IsInvalidated( UI_INVALIDATION::PAINT ));
 
 			const int oldPaintCount = child.GetPaintCallCount();
 
@@ -485,9 +485,9 @@ namespace Unnamed {
 
 			static_cast<void>(UiTree::BuildPaintCommands(root, commandList));
 
-			assert(child.GetPaintCallCount() == oldPaintCount + 1);
+			UASSERT(child.GetPaintCallCount() == oldPaintCount + 1);
 
-			assert(!child.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(!child.IsInvalidated( UI_INVALIDATION::PAINT ));
 		}
 
 		void TestUntransformedElementIsSkipped() {
@@ -499,13 +499,13 @@ namespace Unnamed {
 				commandList
 			);
 
-			assert(commandList.IsEmpty());
+			UASSERT(commandList.IsEmpty());
 
-			assert(result.mVisitedElementCount == 1);
+			UASSERT(result.mVisitedElementCount == 1);
 
-			assert(result .mSkippedUntransformedSubtreeCount == 1);
+			UASSERT(result .mSkippedUntransformedSubtreeCount == 1);
 
-			assert(element.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::PAINT ));
 		}
 	}
 

@@ -96,7 +96,7 @@ namespace Unnamed {
 
 			const UiLayoutPassResult result = root.PerformLayout();
 
-			assert(result.stabilized);
+			UASSERT(result.stabilized);
 		}
 
 		void TestNestedWorldCoordinates() {
@@ -113,53 +113,53 @@ namespace Unnamed {
 
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.visitedElementCount == 3);
-			assert(result.updatedElementCount == 3);
+			UASSERT(result.visitedElementCount == 3);
+			UASSERT(result.updatedElementCount == 3);
 
-			assert(result.changedElementCount == 3);
+			UASSERT(result.changedElementCount == 3);
 
-			assert(result.skippedUnarrangedCount == 0);
+			UASSERT(result.skippedUnarrangedCount == 0);
 
-			assert(root.HasWorldRect());
-			assert(panel.HasWorldRect());
-			assert(child.HasWorldRect());
+			UASSERT(root.HasWorldRect());
+			UASSERT(panel.HasWorldRect());
+			UASSERT(child.HasWorldRect());
 
 			const UiRect& rootWorld = root.GetWorldRect();
 
-			assert(rootWorld.pos.x == 0.0f);
+			UASSERT(rootWorld.pos.x == 0.0f);
 
-			assert(rootWorld.pos.y == 0.0f);
+			UASSERT(rootWorld.pos.y == 0.0f);
 
-			assert(rootWorld.size.x == 1280.0f);
+			UASSERT(rootWorld.size.x == 1280.0f);
 
-			assert(rootWorld.size.y == 720.0f);
+			UASSERT(rootWorld.size.y == 720.0f);
 
 			const UiRect& panelWorld = panel.GetWorldRect();
 
-			assert(panelWorld.pos.x == 100.0f);
+			UASSERT(panelWorld.pos.x == 100.0f);
 
-			assert(panelWorld.pos.y == 50.0f);
+			UASSERT(panelWorld.pos.y == 50.0f);
 
 			const UiRect& childWorld = child.GetWorldRect();
 
-			assert(childWorld.pos.x == 110.0f);
-			assert(childWorld.pos.y == 70.0f);
-			assert(childWorld.size.x == 120.0f);
-			assert(childWorld.size.y == 40.0f);
+			UASSERT(childWorld.pos.x == 110.0f);
+			UASSERT(childWorld.pos.y == 70.0f);
+			UASSERT(childWorld.size.x == 120.0f);
+			UASSERT(childWorld.size.y == 40.0f);
 
 			/*
 			 * Transformを実行してもLocal LayoutRectは
 			 * 変更されない。
 			 */
-			assert(child.GetLayoutRect().pos.x == 10.0f);
+			UASSERT(child.GetLayoutRect().pos.x == 10.0f);
 
-			assert(child.GetLayoutRect().pos.y == 20.0f);
+			UASSERT(child.GetLayoutRect().pos.y == 20.0f);
 
-			assert(!root.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(!root.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 
-			assert(!panel.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(!panel.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 
-			assert(!child.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(!child.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 		}
 
 		void TestCleanTransformPassUsesCache() {
@@ -176,13 +176,13 @@ namespace Unnamed {
 
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.visitedElementCount == 2);
+			UASSERT(result.visitedElementCount == 2);
 
-			assert(result.updatedElementCount == 0);
+			UASSERT(result.updatedElementCount == 0);
 
-			assert(result.changedElementCount == 0);
+			UASSERT(result.changedElementCount == 0);
 
-			assert(child.GetWorldRectChangedCount() == callbackCount);
+			UASSERT(child.GetWorldRectChangedCount() == callbackCount);
 		}
 
 		void TestParentMovementUpdatesDescendant() {
@@ -212,28 +212,28 @@ namespace Unnamed {
 			 * Panelは自身のTransform Dirtyで更新され、
 			 * Childは親のWorld Position変更によって更新される。
 			 */
-			assert(result.updatedElementCount == 2);
+			UASSERT(result.updatedElementCount == 2);
 
-			assert(result.changedElementCount == 2);
+			UASSERT(result.changedElementCount == 2);
 
-			assert(panel.GetWorldRect().pos.x == 200.0f);
+			UASSERT(panel.GetWorldRect().pos.x == 200.0f);
 
-			assert(panel.GetWorldRect().pos.y == 100.0f);
+			UASSERT(panel.GetWorldRect().pos.y == 100.0f);
 
-			assert(child.GetWorldRect().pos.x == 210.0f);
+			UASSERT(child.GetWorldRect().pos.x == 210.0f);
 
-			assert(child.GetWorldRect().pos.y == 120.0f);
+			UASSERT(child.GetWorldRect().pos.y == 120.0f);
 
 			/*
 			 * Childのローカル位置は変わらない。
 			 */
-			assert(child.GetLayoutRect().pos.x == 10.0f);
+			UASSERT(child.GetLayoutRect().pos.x == 10.0f);
 
-			assert(child.GetLayoutRect().pos.y == 20.0f);
+			UASSERT(child.GetLayoutRect().pos.y == 20.0f);
 
-			assert(child.IsInvalidated( UI_INVALIDATION::PAINT ));
+			UASSERT(child.IsInvalidated( UI_INVALIDATION::PAINT ));
 
-			assert(child.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
+			UASSERT(child.IsInvalidated( UI_INVALIDATION::HIT_TEST ));
 		}
 
 		void TestChildLocalMovementUpdatesOnlyChild() {
@@ -255,13 +255,13 @@ namespace Unnamed {
 
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.updatedElementCount == 1);
+			UASSERT(result.updatedElementCount == 1);
 
-			assert(result.changedElementCount == 1);
+			UASSERT(result.changedElementCount == 1);
 
-			assert(child.GetWorldRect().pos.x == 130.0f);
+			UASSERT(child.GetWorldRect().pos.x == 130.0f);
 
-			assert(child.GetWorldRect().pos.y == 90.0f);
+			UASSERT(child.GetWorldRect().pos.y == 90.0f);
 		}
 
 		void TestParentSizeChangeDoesNotUpdateChildWorld() {
@@ -289,15 +289,15 @@ namespace Unnamed {
 			 * PanelのWorldRectサイズだけが変わる。
 			 * PanelのWorld Positionは同じなのでChildは更新不要。
 			 */
-			assert(result.updatedElementCount == 1);
+			UASSERT(result.updatedElementCount == 1);
 
-			assert(result.changedElementCount == 1);
+			UASSERT(result.changedElementCount == 1);
 
-			assert(child.GetWorldRectChangedCount() == childCallbackCount);
+			UASSERT(child.GetWorldRectChangedCount() == childCallbackCount);
 
-			assert(child.GetWorldRect().pos.x == 110.0f);
+			UASSERT(child.GetWorldRect().pos.x == 110.0f);
 
-			assert(child.GetWorldRect().pos.y == 70.0f);
+			UASSERT(child.GetWorldRect().pos.y == 70.0f);
 		}
 
 		void TestCollapsedWorldRect() {
@@ -319,13 +319,13 @@ namespace Unnamed {
 
 			const UiRect& worldRect = child.GetWorldRect();
 
-			assert(worldRect.pos.x == 110.0f);
+			UASSERT(worldRect.pos.x == 110.0f);
 
-			assert(worldRect.pos.y == 70.0f);
+			UASSERT(worldRect.pos.y == 70.0f);
 
-			assert(worldRect.size.x == 0.0f);
+			UASSERT(worldRect.size.x == 0.0f);
 
-			assert(worldRect.size.y == 0.0f);
+			UASSERT(worldRect.size.y == 0.0f);
 		}
 
 		void TestWorldRectUpdatedBeforeCallback() {
@@ -343,9 +343,9 @@ namespace Unnamed {
 
 			const UiRect& notified = child.GetLastNewWorldRect();
 
-			assert(AreUiRectsExactlyEqual( observed, notified ));
+			UASSERT(AreUiRectsExactlyEqual( observed, notified ));
 
-			assert(AreUiRectsExactlyEqual( child.GetWorldRect(), notified ));
+			UASSERT(AreUiRectsExactlyEqual( child.GetWorldRect(), notified ));
 		}
 
 		void TestTransformInvalidationDuringCallbackRemains() {
@@ -362,7 +362,7 @@ namespace Unnamed {
 
 			static_cast<void>(UiTree::UpdateTransforms(root));
 
-			assert(child.IsInvalidated(UI_INVALIDATION::TRANSFORM));
+			UASSERT(child.IsInvalidated(UI_INVALIDATION::TRANSFORM));
 
 			const int callbackCount = child.GetWorldRectChangedCount();
 
@@ -372,13 +372,13 @@ namespace Unnamed {
 			 */
 			const UiTransformPassResult result = UiTree::UpdateTransforms(root);
 
-			assert(result.updatedElementCount == 1);
+			UASSERT(result.updatedElementCount == 1);
 
-			assert(result.changedElementCount == 0);
+			UASSERT(result.changedElementCount == 0);
 
-			assert(child.GetWorldRectChangedCount() == callbackCount);
+			UASSERT(child.GetWorldRectChangedCount() == callbackCount);
 
-			assert(!child.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(!child.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 		}
 
 		void TestUnarrangedElementIsSkipped() {
@@ -388,17 +388,17 @@ namespace Unnamed {
 				element
 			);
 
-			assert(result.visitedElementCount == 1);
+			UASSERT(result.visitedElementCount == 1);
 
-			assert(result.updatedElementCount == 0);
+			UASSERT(result.updatedElementCount == 0);
 
-			assert(result.changedElementCount == 0);
+			UASSERT(result.changedElementCount == 0);
 
-			assert(result.skippedUnarrangedCount == 1);
+			UASSERT(result.skippedUnarrangedCount == 1);
 
-			assert(!element.HasWorldRect());
+			UASSERT(!element.HasWorldRect());
 
-			assert(element.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
+			UASSERT(element.IsInvalidated( UI_INVALIDATION::TRANSFORM ));
 		}
 	} // namespace
 

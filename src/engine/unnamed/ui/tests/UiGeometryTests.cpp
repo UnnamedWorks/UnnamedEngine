@@ -20,15 +20,15 @@ namespace Unnamed {
 		void TestDefaultRect() {
 			const UiRect rect;
 
-			assert(rect.pos.x == 0.0f);
-			assert(rect.pos.y == 0.0f);
-			assert(rect.size.x == 0.0f);
-			assert(rect.size.y == 0.0f);
+			UASSERT(rect.pos.x == 0.0f);
+			UASSERT(rect.pos.y == 0.0f);
+			UASSERT(rect.size.x == 0.0f);
+			UASSERT(rect.size.y == 0.0f);
 
-			assert(rect.IsValid());
-			assert(rect.IsEmpty());
+			UASSERT(rect.IsValid());
+			UASSERT(rect.IsEmpty());
 
-			assert(!rect.Contains(Vec2(0.0f, 0.0f)));
+			UASSERT(!rect.Contains(Vec2(0.0f, 0.0f)));
 		}
 
 		void TestRectBounds() {
@@ -42,28 +42,28 @@ namespace Unnamed {
 			const Vec2 center   = rect.GetCenter();
 			const Vec2 halfSize = rect.GetHalfSize();
 
-			assert(min.x == 10.0f);
-			assert(min.y == 20.0f);
+			UASSERT(min.x == 10.0f);
+			UASSERT(min.y == 20.0f);
 
-			assert(max.x == 110.0f);
-			assert(max.y == 70.0f);
+			UASSERT(max.x == 110.0f);
+			UASSERT(max.y == 70.0f);
 
-			assert(center.x == 60.0f);
-			assert(center.y == 45.0f);
+			UASSERT(center.x == 60.0f);
+			UASSERT(center.y == 45.0f);
 
-			assert(halfSize.x == 50.0f);
-			assert(halfSize.y == 25.0f);
+			UASSERT(halfSize.x == 50.0f);
+			UASSERT(halfSize.y == 25.0f);
 
-			assert(rect.GetLeft() == 10.0f);
-			assert(rect.GetTop() == 20.0f);
-			assert(rect.GetRight() == 110.0f);
-			assert(rect.GetBottom() == 70.0f);
+			UASSERT(rect.GetLeft() == 10.0f);
+			UASSERT(rect.GetTop() == 20.0f);
+			UASSERT(rect.GetRight() == 110.0f);
+			UASSERT(rect.GetBottom() == 70.0f);
 
-			assert(rect.GetWidth() == 100.0f);
-			assert(rect.GetHeight() == 50.0f);
+			UASSERT(rect.GetWidth() == 100.0f);
+			UASSERT(rect.GetHeight() == 50.0f);
 
-			assert(rect.IsValid());
-			assert(!rect.IsEmpty());
+			UASSERT(rect.IsValid());
+			UASSERT(!rect.IsEmpty());
 		}
 
 		void TestRectContains() {
@@ -73,16 +73,16 @@ namespace Unnamed {
 			};
 
 			// 左上は含まれる。
-			assert(rect.Contains(Vec2(10.0f, 20.0f)));
+			UASSERT(rect.Contains(Vec2(10.0f, 20.0f)));
 
-			assert(rect.Contains(Vec2(50.0f, 40.0f)));
+			UASSERT(rect.Contains(Vec2(50.0f, 40.0f)));
 
 			// 右端と下端は含まれない。
-			assert(!rect.Contains(Vec2(110.0f, 40.0f)));
-			assert(!rect.Contains(Vec2(50.0f, 70.0f)));
+			UASSERT(!rect.Contains(Vec2(110.0f, 40.0f)));
+			UASSERT(!rect.Contains(Vec2(50.0f, 70.0f)));
 
-			assert(!rect.Contains(Vec2(9.99f, 40.0f)));
-			assert(!rect.Contains(Vec2(50.0f, 19.99f)));
+			UASSERT(!rect.Contains(Vec2(9.99f, 40.0f)));
+			UASSERT(!rect.Contains(Vec2(50.0f, 19.99f)));
 		}
 
 		void TestInvalidRect() {
@@ -91,10 +91,10 @@ namespace Unnamed {
 				.size = Vec2(-1.0f, 10.0f)
 			};
 
-			assert(!negativeWidth.IsValid());
-			assert(negativeWidth.IsEmpty());
+			UASSERT(!negativeWidth.IsValid());
+			UASSERT(negativeWidth.IsEmpty());
 
-			assert(
+			UASSERT(
 				!negativeWidth.Contains(
 					Vec2(0.0f, 0.0f)
 				)
@@ -108,24 +108,24 @@ namespace Unnamed {
 					Vec2(50.0f, 80.0f)
 				);
 
-			assert(rect.pos.x == 10.0f);
-			assert(rect.pos.y == 20.0f);
-			assert(rect.size.x == 40.0f);
-			assert(rect.size.y == 60.0f);
+			UASSERT(rect.pos.x == 10.0f);
+			UASSERT(rect.pos.y == 20.0f);
+			UASSERT(rect.size.x == 40.0f);
+			UASSERT(rect.size.y == 60.0f);
 		}
 
 		void TestThickness() {
 			const UiThickness uniform =
 				UiThickness::Uniform(8.0f);
 
-			assert(uniform.left == 8.0f);
-			assert(uniform.top == 8.0f);
-			assert(uniform.right == 8.0f);
-			assert(uniform.bottom == 8.0f);
+			UASSERT(uniform.left == 8.0f);
+			UASSERT(uniform.top == 8.0f);
+			UASSERT(uniform.right == 8.0f);
+			UASSERT(uniform.bottom == 8.0f);
 
-			assert(uniform.GetHorizontal() == 16.0f);
-			assert(uniform.GetVertical() == 16.0f);
-			assert(uniform.IsFinite());
+			UASSERT(uniform.GetHorizontal() == 16.0f);
+			UASSERT(uniform.GetVertical() == 16.0f);
+			UASSERT(uniform.IsFinite());
 
 			const UiThickness symmetric =
 				UiThickness::Symmetric(
@@ -133,17 +133,17 @@ namespace Unnamed {
 					6.0f
 				);
 
-			assert(symmetric.left == 12.0f);
-			assert(symmetric.right == 12.0f);
-			assert(symmetric.top == 6.0f);
-			assert(symmetric.bottom == 6.0f);
+			UASSERT(symmetric.left == 12.0f);
+			UASSERT(symmetric.right == 12.0f);
+			UASSERT(symmetric.top == 6.0f);
+			UASSERT(symmetric.bottom == 6.0f);
 
-			assert(
+			UASSERT(
 				symmetric.GetHorizontal() ==
 				24.0f
 			);
 
-			assert(
+			UASSERT(
 				symmetric.GetVertical() ==
 				12.0f
 			);
@@ -153,12 +153,12 @@ namespace Unnamed {
 			const UiCornerRadii radii =
 				UiCornerRadii::Uniform(16.0f);
 
-			assert(radii.topLeft == 16.0f);
-			assert(radii.topRight == 16.0f);
-			assert(radii.bottomRight == 16.0f);
-			assert(radii.bottomLeft == 16.0f);
+			UASSERT(radii.topLeft == 16.0f);
+			UASSERT(radii.topRight == 16.0f);
+			UASSERT(radii.bottomRight == 16.0f);
+			UASSERT(radii.bottomLeft == 16.0f);
 
-			assert(radii.IsFinite());
+			UASSERT(radii.IsFinite());
 		}
 
 		void TestValidCornerRadiiRemainUnchanged() {
@@ -174,10 +174,10 @@ namespace Unnamed {
 					Vec2(100.0f, 100.0f)
 				);
 
-			assert(normalized.topLeft == 10.0f);
-			assert(normalized.topRight == 20.0f);
-			assert(normalized.bottomRight == 30.0f);
-			assert(normalized.bottomLeft == 10.0f);
+			UASSERT(normalized.topLeft == 10.0f);
+			UASSERT(normalized.topRight == 20.0f);
+			UASSERT(normalized.bottomRight == 30.0f);
+			UASSERT(normalized.bottomLeft == 10.0f);
 		}
 
 		void TestCornerRadiiNormalization() {
@@ -193,24 +193,24 @@ namespace Unnamed {
 					Vec2(100.0f, 100.0f)
 				);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.topLeft,
 					66.66667f
 				)
 			);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.topRight,
 					33.33333f
 				)
 			);
 
-			assert(normalized.bottomRight == 0.0f);
-			assert(normalized.bottomLeft == 0.0f);
+			UASSERT(normalized.bottomRight == 0.0f);
+			UASSERT(normalized.bottomLeft == 0.0f);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.topLeft +
 					normalized.topRight,
@@ -230,28 +230,28 @@ namespace Unnamed {
 
 			// 高さ50pxなので、上下の半径合計は
 			// 最大50pxまで縮小される。
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.topLeft,
 					25.0f
 				)
 			);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.topRight,
 					25.0f
 				)
 			);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.bottomRight,
 					25.0f
 				)
 			);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.bottomLeft,
 					25.0f
@@ -272,10 +272,10 @@ namespace Unnamed {
 					Vec2(100.0f, 100.0f)
 				);
 
-			assert(normalized.topLeft == 0.0f);
-			assert(normalized.topRight == 20.0f);
-			assert(normalized.bottomRight == 0.0f);
-			assert(normalized.bottomLeft == 40.0f);
+			UASSERT(normalized.topLeft == 0.0f);
+			UASSERT(normalized.topRight == 20.0f);
+			UASSERT(normalized.bottomRight == 0.0f);
+			UASSERT(normalized.bottomLeft == 40.0f);
 		}
 
 		void TestCapsuleRadii() {
@@ -284,17 +284,17 @@ namespace Unnamed {
 					Vec2(100.0f, 40.0f)
 				);
 
-			assert(horizontal.topLeft == 20.0f);
-			assert(horizontal.topRight == 20.0f);
-			assert(horizontal.bottomRight == 20.0f);
-			assert(horizontal.bottomLeft == 20.0f);
+			UASSERT(horizontal.topLeft == 20.0f);
+			UASSERT(horizontal.topRight == 20.0f);
+			UASSERT(horizontal.bottomRight == 20.0f);
+			UASSERT(horizontal.bottomLeft == 20.0f);
 
 			const UiCornerRadii circle =
 				UiCornerRadii::Capsule(
 					Vec2(40.0f, 40.0f)
 				);
 
-			assert(circle.topLeft == 20.0f);
+			UASSERT(circle.topLeft == 20.0f);
 		}
 
 		void TestRoundedRectNormalization() {
@@ -310,19 +310,19 @@ namespace Unnamed {
 			const UiRoundedRect normalized =
 				roundedRect.GetNormalized();
 
-			assert(normalized.rect.pos.x == 10.0f);
-			assert(normalized.rect.pos.y == 20.0f);
-			assert(normalized.rect.size.x == 100.0f);
-			assert(normalized.rect.size.y == 50.0f);
+			UASSERT(normalized.rect.pos.x == 10.0f);
+			UASSERT(normalized.rect.pos.y == 20.0f);
+			UASSERT(normalized.rect.size.x == 100.0f);
+			UASSERT(normalized.rect.size.y == 50.0f);
 
-			assert(
+			UASSERT(
 				IsNearlyEqual(
 					normalized.radii.topLeft,
 					25.0f
 				)
 			);
 
-			assert(normalized.IsValid());
+			UASSERT(normalized.IsValid());
 		}
 	} // namespace
 
