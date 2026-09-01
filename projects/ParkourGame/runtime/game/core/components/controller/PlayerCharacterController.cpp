@@ -11,7 +11,6 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
-#include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/world/World.h"
 #include "engine/game/IDemoService.h"
 
@@ -26,8 +25,12 @@ namespace Unnamed {
 				return;
 			}
 
-			constexpr InputKey gamepadMoveX = InputKey::Gamepad(GAMEPAD_INPUT_CODE::LX);
-			constexpr InputKey gamepadMoveY = InputKey::Gamepad(GAMEPAD_INPUT_CODE::LY);
+			constexpr InputKey gamepadMoveX = InputKey::Gamepad(
+				GAMEPAD_INPUT_CODE::LX
+			);
+			constexpr InputKey gamepadMoveY = InputKey::Gamepad(
+				GAMEPAD_INPUT_CODE::LY
+			);
 
 			input->BindAxis2D("GamepadMove", gamepadMoveX, INPUT_AXIS::X, 1.0f);
 			input->BindAxis2D("GamepadMove", gamepadMoveY, INPUT_AXIS::Y, 1.0f);
@@ -86,6 +89,13 @@ namespace Unnamed {
 		mWasPlaybackMode                  = false;
 		mObservedPlaybackSessionSerial    = 0;
 		mObservedRecordingSessionSerial   = 0;
+
+		mInputContext = mInput->CreateInputContext(
+			"Game",
+			INPUT_CONTEXT_MODE::PASS_THROUGH
+		);
+
+		mInput->PushInputContext(mInputContext);
 	}
 
 	void PlayerCharacterController::OnDetached() {
@@ -118,7 +128,7 @@ namespace Unnamed {
 		}
 
 		IDemoService* demoManager      = GetDemoService();
-		const float  fixedTickSeconds =
+		const float   fixedTickSeconds =
 			demoManager ?
 				demoManager->GetSimulationStepSeconds() :
 				IDemoService::TickStepSecondsFromRate(
@@ -128,8 +138,8 @@ namespace Unnamed {
 		const uint64_t subjectEntityGuid = GetOwner() ?
 			                                   GetOwner()->GetGuid() :
 			                                   0;
-		bool playbackMode  = demoManager && demoManager->IsPlayback();
-		bool recordingMode = demoManager && demoManager->IsRecording();
+		bool playbackMode = demoManager && demoManager->IsPlayback();
+		const bool recordingMode = demoManager && demoManager->IsRecording();
 		const uint64_t playbackSessionSerial = playbackMode ?
 			                                       demoManager->
 			                                       GetPlaybackSessionSerial() :
@@ -171,15 +181,15 @@ namespace Unnamed {
 			if (Entity* owner = GetOwner()) {
 				if (!demoManager->ApplyInitialSnapshotIfNeeded(*owner)) {
 					(void)demoManager->Stop();
-					playbackMode     = false;
-					mWasPlaybackMode = false;
+					playbackMode                   = false;
+					mWasPlaybackMode               = false;
 					mObservedPlaybackSessionSerial = 0;
 					return;
 				}
 			}
 		}
-		mWasPlaybackMode = playbackMode;
-		mWasRecordingMode = recordingMode;
+		mWasPlaybackMode               = playbackMode;
+		mWasRecordingMode              = recordingMode;
 		mObservedPlaybackSessionSerial = playbackMode ?
 			                                 playbackSessionSerial :
 			                                 0;
@@ -214,24 +224,24 @@ namespace Unnamed {
 					);
 				}
 				(void)demoManager->Stop();
-				playbackMode                  = false;
-				mWasPlaybackMode              = false;
+				playbackMode                   = false;
+				mWasPlaybackMode               = false;
 				mObservedPlaybackSessionSerial = 0;
-				mQueuedSprintPressCount       = 0;
-				mQueuedPrimaryPressedCount    = 0;
-				mQueuedPrimaryReleasedCount   = 0;
-				mQueuedSecondaryPressedCount  = 0;
-				mQueuedSecondaryReleasedCount = 0;
-				mQueuedReloadPressedCount     = 0;
-				mQueuedCycleNextPressedCount  = 0;
-				mQueuedCyclePrevPressedCount  = 0;
+				mQueuedSprintPressCount        = 0;
+				mQueuedPrimaryPressedCount     = 0;
+				mQueuedPrimaryReleasedCount    = 0;
+				mQueuedSecondaryPressedCount   = 0;
+				mQueuedSecondaryReleasedCount  = 0;
+				mQueuedReloadPressedCount      = 0;
+				mQueuedCycleNextPressedCount   = 0;
+				mQueuedCyclePrevPressedCount   = 0;
 			}
 		}
 
 		if (!usedPlaybackCommand) {
 			if (demoManager && recordingMode &&
 			    !mRecordingInitialSnapshotCaptured) {
-				if (Entity* owner = GetOwner()) {
+				if (const Entity* owner = GetOwner()) {
 					demoManager->CaptureInitialSnapshotIfNeeded(*owner);
 					mRecordingInitialSnapshotCaptured = true;
 				}
@@ -283,7 +293,7 @@ namespace Unnamed {
 			return;
 		}
 
-		if (auto* demoManager = GetDemoService();
+		if (const auto* demoManager = GetDemoService();
 			demoManager && demoManager->IsPlayback()) {
 			return;
 		}
@@ -381,11 +391,13 @@ namespace Unnamed {
 			return;
 		}
 		mFixedTickCounter = inState.value(
-			"fixedTickCounter", mFixedTickCounter
+			"fixedTickCounter",
+			mFixedTickCounter
 		);
 		mLastViewYawDeg   = inState.value("lastViewYawDeg", mLastViewYawDeg);
 		mLastViewPitchDeg = inState.value(
-			"lastViewPitchDeg", mLastViewPitchDeg
+			"lastViewPitchDeg",
+			mLastViewPitchDeg
 		);
 	}
 
@@ -572,16 +584,32 @@ namespace Unnamed {
 		ImGui::BeginDisabled();
 		ImGui::TextUnformatted("PlayerInput");
 		ImGuiWidgets::DragVec3(
-			"Move Axis", mDebugMoveFrameInput.moveAxis, Vec3::zero, 0.1f, "%.3f"
+			"Move Axis",
+			mDebugMoveFrameInput.moveAxis,
+			Vec3::zero,
+			0.1f,
+			"%.3f"
 		);
 		ImGuiWidgets::DragVec3(
-			"Right", mDebugMoveFrameInput.right, Vec3::zero, 0.1f, "%.3f"
+			"Right",
+			mDebugMoveFrameInput.right,
+			Vec3::zero,
+			0.1f,
+			"%.3f"
 		);
 		ImGuiWidgets::DragVec3(
-			"Up", mDebugMoveFrameInput.up, Vec3::zero, 0.1f, "%.3f"
+			"Up",
+			mDebugMoveFrameInput.up,
+			Vec3::zero,
+			0.1f,
+			"%.3f"
 		);
 		ImGuiWidgets::DragVec3(
-			"Forward", mDebugMoveFrameInput.forward, Vec3::zero, 0.1f, "%.3f"
+			"Forward",
+			mDebugMoveFrameInput.forward,
+			Vec3::zero,
+			0.1f,
+			"%.3f"
 		);
 		ImGui::Checkbox("Jump", &mDebugMoveFrameInput.jumpPressed);
 		ImGui::Checkbox("Sprint", &mDebugMoveFrameInput.sprintPressed);
@@ -630,4 +658,3 @@ namespace Unnamed {
 
 	REGISTER_COMPONENT(PlayerCharacterController);
 }
-

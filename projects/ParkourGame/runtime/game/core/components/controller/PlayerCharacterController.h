@@ -2,6 +2,8 @@
 
 #include <json.hpp>
 
+#include <engine/unnamed/subsystem/input/mapping/InputMappingTypes.h>
+
 #include "../character/base/BaseCharacterComponent.h"
 
 #include "base/BaseCharacterController.h"
@@ -47,13 +49,16 @@ namespace Unnamed {
 			const DemoTickCommand& command, float stepSeconds
 		);
 
-		InputSystem*              mInput                            = nullptr;
-		CameraRotatorComponent*   mCameraRotator                    = nullptr;
-		MovementFrameInput        mDebugMoveFrameInput              = {};
-		CharacterActionFrameInput mDebugActionFrameInput            = {};
+		InputSystem*              mInput                 = nullptr;
+		CameraRotatorComponent*   mCameraRotator         = nullptr;
+		MovementFrameInput        mDebugMoveFrameInput   = {};
+		CharacterActionFrameInput mDebugActionFrameInput = {};
+		
+		InputContextId            mInputContext;
+		
 		uint64_t                  mFixedTickCounter                 = 0;
-		float                     mLastViewYawDeg                   = 0.0f;
-		float                     mLastViewPitchDeg                 = 0.0f;
+		uint64_t                  mObservedPlaybackSessionSerial    = 0;
+		uint64_t                  mObservedRecordingSessionSerial   = 0;
 		uint32_t                  mQueuedSprintPressCount           = 0;
 		uint32_t                  mQueuedPrimaryPressedCount        = 0;
 		uint32_t                  mQueuedPrimaryReleasedCount       = 0;
@@ -62,10 +67,10 @@ namespace Unnamed {
 		uint32_t                  mQueuedReloadPressedCount         = 0;
 		uint32_t                  mQueuedCycleNextPressedCount      = 0;
 		uint32_t                  mQueuedCyclePrevPressedCount      = 0;
+		float                     mLastViewYawDeg                   = 0.0f;
+		float                     mLastViewPitchDeg                 = 0.0f;
 		bool                      mRecordingInitialSnapshotCaptured = false;
 		bool                      mWasRecordingMode                 = false;
 		bool                      mWasPlaybackMode                  = false;
-		uint64_t                  mObservedPlaybackSessionSerial    = 0;
-		uint64_t                  mObservedRecordingSessionSerial   = 0;
 	};
 }
