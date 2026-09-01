@@ -16,19 +16,32 @@ namespace Unnamed {
 
 		/// @brief 現在の物理入力状態からAction・Axisを評価します。
 		/// @param snapshot 現在フレームの入力スナップショット
-		void Evaluate(const InputSnapshot& snapshot);
+		/// @param consumedKeys 自分より上位のコンテキストによって使用されたキーのセット
+		void Evaluate(
+			const InputSnapshot&          snapshot,
+			std::unordered_set<InputKey>& consumedKeys
+		);
 
 		/// @brief Actionへキーをバインドします
 		/// @param action バインドするAction名
 		/// @param key バインドするInputKey
-		void BindAction(const std::string& action, const InputKey& key);
+		/// @param consumeInput このバインディングが使用した入力を下のコンテキストへ渡さないかどうか
+		void BindAction(
+			const std::string& action,
+			const InputKey&    key,
+			bool               consumeInput = false
+		);
 
 		/// @brief 1D Axisへキーをバインドします。
 		/// @param axis バインドするAxis名
 		/// @param key バインドするInputKey
 		/// @param scale スケール値（デフォルトは1.0f)
+		/// @param consumeInput このバインディングが使用した入力を下のコンテキストへ渡さないかどうか
 		void BindAxis1D(
-			const std::string& axis, const InputKey& key, float scale = 1.0f
+			const std::string& axis,
+			const InputKey&    key,
+			float              scale        = 1.0f,
+			bool               consumeInput = false
 		);
 
 		/// @brief 2D Axisへキーをバインドします。
@@ -36,9 +49,11 @@ namespace Unnamed {
 		/// @param key バインドするInputKey
 		/// @param axisType バインドするAxisのタイプ（XまたはY)
 		/// @param scale スケール値（デフォルトは1.0f)
+		/// @param consumeInput このバインディングが使用した入力を下のコンテキストへ渡さないかどうか
 		void BindAxis2D(
 			const std::string& axis, const InputKey& key, INPUT_AXIS axisType,
-			float              scale = 1.0f
+			float              scale        = 1.0f,
+			bool               consumeInput = false
 		);
 
 		/// @brief 指定したアクションまたは軸からすべてのバインドを解除します
@@ -49,7 +64,7 @@ namespace Unnamed {
 		/// @param action アクション名
 		/// @param pressed 押下状態（trueなら押下、falseなら解放）
 		void HandleExternalAction(
-			const std::string& action, const bool pressed
+			const std::string& action, bool pressed
 		);
 
 		/// @brief 指定したアクションの状態を取得します

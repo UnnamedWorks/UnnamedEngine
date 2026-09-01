@@ -28,7 +28,11 @@ namespace Unnamed {
 
 		/// @brief 新しいコンテキストを作成します。
 		/// @param name コンテキスト名
-		[[nodiscard]] InputContextId CreateContext(const std::string& name);
+		/// @param mode コンテキストモード
+		[[nodiscard]] InputContextId CreateContext(
+			const std::string& name,
+			INPUT_CONTEXT_MODE mode = INPUT_CONTEXT_MODE::PASS_THROUGH
+		);
 
 		/// @brief コンテキストを削除します。
 		/// @param contextId 削除するコンテキストのID
@@ -46,7 +50,28 @@ namespace Unnamed {
 		/// @param contextId 確認するコンテキストのID
 		[[nodiscard]] bool IsContextActive(InputContextId contextId) const;
 
+		/// @brief コンテキストが入力を受け付けているかどうかを確認します。
+		/// @param contextId 確認するコンテキストのID
+		/// @return 入力を受け付けている場合はtrue、受け付けていない場合はfalse
+		[[nodiscard]] bool IsContextReceivingInput(
+			InputContextId contextId
+		) const;
+
+		/// @brief デフォルトコンテキストのIDを取得します。
 		[[nodiscard]] InputContextId GetDefaultContextId() const;
+
+		/// @brief コンテキストのモードを設定します。
+		/// @param contextId 設定するコンテキストのID
+		/// @param mode 設定するモード	
+		/// @return 設定が成功した場合はtrue、失敗した場合はfalse
+		bool SetContextMode(InputContextId contextId, INPUT_CONTEXT_MODE mode);
+
+		/// @brief コンテキストのモードを取得します。
+		/// @param contextId 取得するコンテキストのID
+		/// @return コンテキストのモード
+		[[nodiscard]] INPUT_CONTEXT_MODE GetContextMode(
+			InputContextId contextId
+		) const;
 
 		//---------------------------------------------------------------------
 		// コンテキスト指定バインディング
@@ -56,10 +81,12 @@ namespace Unnamed {
 		/// @param contextId 指定するコンテキスト
 		/// @param action バインドするAction名
 		/// @param key バインドするInputKey
+		/// @param consumeInput このバインディングが使用した入力を下のコンテキストへ渡さないかどうか
 		void BindAction(
 			InputContextId     contextId,
 			const std::string& action,
-			const InputKey&    key
+			const InputKey&    key,
+			bool               consumeInput = false
 		);
 
 		/// @brief 1D Axisへキーをバインドします。
@@ -67,11 +94,13 @@ namespace Unnamed {
 		/// @param axis バインドするAxis名
 		/// @param key バインドするInputKey
 		/// @param scale スケール値（デフォルトは1.0f)
+		/// @param consumeInput このバインディングが使用した入力を下のコンテキストへ渡さないかどうか
 		void BindAxis1D(
 			InputContextId     contextId,
 			const std::string& axis,
 			const InputKey&    key,
-			float              scale = 1.0f
+			float              scale        = 1.0f,
+			bool               consumeInput = false
 		);
 
 		/// @brief 2D Axisへキーをバインドします。
@@ -80,12 +109,14 @@ namespace Unnamed {
 		/// @param key バインドするInputKey
 		/// @param axisType バインドするAxisのタイプ（XまたはY)
 		/// @param scale スケール値（デフォルトは1.0f)
+		/// @param consumeInput このバインディングが使用した入力を下のコンテキストへ渡さないかどうか
 		void BindAxis2D(
 			InputContextId     contextId,
 			const std::string& axis,
 			const InputKey&    key,
 			INPUT_AXIS         axisType,
-			float              scale = 1.0f
+			float              scale        = 1.0f,
+			bool               consumeInput = false
 		);
 
 		/// @brief 指定したアクションまたは軸からすべてのバインドを解除します
@@ -210,6 +241,8 @@ namespace Unnamed {
 			std::string    name;
 
 			std::unique_ptr<InputMappingContext> context;
+
+			INPUT_CONTEXT_MODE mode = INPUT_CONTEXT_MODE::PASS_THROUGH;
 		};
 
 		/// @brief コンテキストを検索します

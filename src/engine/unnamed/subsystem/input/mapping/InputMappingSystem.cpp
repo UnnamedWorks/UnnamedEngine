@@ -25,15 +25,25 @@ namespace Unnamed {
 	}
 
 	void InputMappingSystem::Evaluate(const InputSnapshot& snapshot) {
-		for (auto it = mContextStack.rbegin(); it != mContextStack.rend(); ++
-		     it) {
+		std::unordered_set<InputKey> consumedKeys;
+
+		for (
+			auto it = mContextStack.rbegin();
+			it != mContextStack.rend();
+			++it
+		) {
 			const auto* entry = FindContext(*it);
 
 			if (!entry) {
 				continue;
 			}
 
-			entry->context->Evaluate(snapshot);
+			entry->context->Evaluate(snapshot, consumedKeys);
+
+			// ブロッキング
+			if (entry->mode == INPUT_CONTEXT_MODE::BLOCK_LOWER) {
+				break;
+			}
 		}
 	}
 
@@ -44,7 +54,9 @@ namespace Unnamed {
 		}
 	}
 
-	InputContextId InputMappingSystem::CreateContext(const std::string& name) {
+	InputContextId InputMappingSystem::CreateContext(
+		const std::string& name, const INPUT_CONTEXT_MODE mode
+	) {
 		const InputContextId id = {
 			.value = mNextContextId++
 		};
@@ -52,7 +64,8 @@ namespace Unnamed {
 		ContextEntry entry = {
 			.id      = id,
 			.name    = name,
-			.context = std::make_unique<InputMappingContext>()
+			.context = std::make_unique<InputMappingContext>(),
+			.mode    = mode
 		};
 
 		mContexts.emplace_back(std::move(entry));
@@ -119,13 +132,67 @@ namespace Unnamed {
 		       mContextStack.end();
 	}
 
+	bool InputMappingSystem::IsContextReceivingInput(
+		const InputContextId contextId
+	) const {
+		bool foundTarget = false;
+
+		for (
+			auto it = mContextStack.rbegin();
+			it != mContextStack.rend();
+			++it
+		) {
+			const auto* entry = FindContext(*it);
+
+			if (!entry) {
+				continue;
+			}
+
+			if (entry->id == contextId) {
+				foundTarget = true;
+				break;
+			}
+
+			if (entry->mode == INPUT_CONTEXT_MODE::BLOCK_LOWER) {
+				return false;
+			}
+		}
+
+		return foundTarget;
+	}
+
 	InputContextId InputMappingSystem::GetDefaultContextId() const {
 		return mDefaultContextId;
 	}
 
+	bool InputMappingSystem::SetContextMode(
+		const InputContextId contextId, const INPUT_CONTEXT_MODE mode
+	) {
+		auto* entry = FindContext(contextId);
+
+		if (!entry) {
+			return false;
+		}
+
+		entry->mode = mode;
+		return true;
+	}
+
+	INPUT_CONTEXT_MODE InputMappingSystem::GetContextMode(
+		const InputContextId contextId
+	) const {
+		const auto* entry = FindContext(contextId);
+
+		if (!entry) {
+			return INPUT_CONTEXT_MODE::PASS_THROUGH;
+		}
+
+		return entry->mode;
+	}
+
 	void InputMappingSystem::BindAction(
 		const InputContextId contextId, const std::string& action,
-		const InputKey&      key
+		const InputKey&      key, const bool               consumeInput
 	) {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		auto* entry = FindContext(contextId);
@@ -134,12 +201,13 @@ namespace Unnamed {
 			return;
 		}
 
-		entry->context->BindAction(action, key);
+		entry->context->BindAction(action, key, consumeInput);
 	}
 
 	void InputMappingSystem::BindAxis1D(
 		const InputContextId contextId, const std::string& axis,
-		const InputKey&      key, const float              scale
+		const InputKey&      key, const float              scale,
+		const bool           consumeInput
 	) {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		auto* entry = FindContext(contextId);
@@ -148,13 +216,13 @@ namespace Unnamed {
 			return;
 		}
 
-		entry->context->BindAxis1D(axis, key, scale);
+		entry->context->BindAxis1D(axis, key, scale, consumeInput);
 	}
 
 	void InputMappingSystem::BindAxis2D(
 		const InputContextId contextId, const std::string& axis,
 		const InputKey&      key, const INPUT_AXIS         axisType,
-		const float          scale
+		const float          scale, const bool             consumeInput
 	) {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		auto* entry = FindContext(contextId);
@@ -163,7 +231,13 @@ namespace Unnamed {
 			return;
 		}
 
-		entry->context->BindAxis2D(axis, key, axisType, scale);
+		entry->context->BindAxis2D(
+			axis,
+			key,
+			axisType,
+			scale,
+			consumeInput
+		);
 	}
 
 	void InputMappingSystem::Unbind(
@@ -184,7 +258,7 @@ namespace Unnamed {
 	) const {
 		const auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextActive(contextId)) {
+		if (!entry || !IsContextReceivingInput(contextId)) {
 			return false;
 		}
 
@@ -196,7 +270,7 @@ namespace Unnamed {
 	) const {
 		const auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextActive(contextId)) {
+		if (!entry || !IsContextReceivingInput(contextId)) {
 			return false;
 		}
 
@@ -208,7 +282,7 @@ namespace Unnamed {
 	) const {
 		const auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextActive(contextId)) {
+		if (!entry || !IsContextReceivingInput(contextId)) {
 			return false;
 		}
 
@@ -220,7 +294,7 @@ namespace Unnamed {
 	) const {
 		const auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextActive(contextId)) {
+		if (!entry || !IsContextReceivingInput(contextId)) {
 			return 0.0f;
 		}
 
@@ -232,7 +306,7 @@ namespace Unnamed {
 	) const {
 		const auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextActive(contextId)) {
+		if (!entry || !IsContextReceivingInput(contextId)) {
 			return Vec2::zero;
 		}
 
@@ -246,7 +320,7 @@ namespace Unnamed {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextActive(contextId)) {
+		if (!entry || !IsContextReceivingInput(contextId)) {
 			return;
 		}
 

@@ -42,6 +42,9 @@ namespace Unnamed {
 		float      scale   = 1.0f;
 		Vec2       scale2D = Vec2::one;
 		INPUT_AXIS axis    = INPUT_AXIS::X;
+
+		// このバインディングが使用した入力を下のコンテキストへ渡さない
+		bool consumeInput = false;
 	};
 
 	/// @brief InputMappingContextの識別用ID
@@ -53,5 +56,9 @@ namespace Unnamed {
 		}
 
 		constexpr bool operator==(const InputContextId&) const = default;
+	};
+
+	enum class INPUT_CONTEXT_MODE : uint8_t {
+		PASS_THROUGH, BLOCK_LOWER
 	};
 }

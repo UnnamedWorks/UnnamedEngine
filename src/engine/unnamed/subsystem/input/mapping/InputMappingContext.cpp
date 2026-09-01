@@ -9,9 +9,7 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "InputMapping";
 
 	void InputMappingContext::BeginFrame() {
-		//---------------------------------------------------------------------
 		// 入力状態をリセット
-		//---------------------------------------------------------------------
 		for (auto& state : mActionStates | std::views::values) {
 			state.bIsPressed  = false;
 			state.bIsHeld     = false;
@@ -23,6 +21,7 @@ namespace Unnamed {
 			mActionStates[action].bIsHeld = true;
 		}
 
+		// 
 		for (auto& [value] : mAxisStates1D | std::views::values) {
 			value = 0.0f;
 		}
@@ -32,10 +31,15 @@ namespace Unnamed {
 		}
 	}
 
-	void InputMappingContext::Evaluate(const InputSnapshot& snapshot) {
+	void InputMappingContext::Evaluate(
+		const InputSnapshot&          snapshot,
+		std::unordered_set<InputKey>& consumedKeys
+	) {
+		std::unordered_set<InputKey> consumedByThisContext;
+
 		// アクション状態を一時的に保存するマップ
 		std::unordered_map<std::string, std::tuple<bool, bool, bool>>
-				tempActionStates;
+			tempActionStates;
 
 		// <axis名, <正の値, 負の値>>
 		std::unordered_map<std::string, std::pair<float, float>> tempAxis1D;
@@ -43,8 +47,21 @@ namespace Unnamed {
 		std::unordered_map<std::string, std::pair<Vec2, Vec2>>   tempAxis2D;
 
 		// すべての入力を処理して一時マップに値を蓄積
-		for (const auto& [key, type, target, scale, scale2D, axis] :
-		     mBindings) {
+		for (
+			const auto& [
+				key,
+				type,
+				target,
+				scale,
+				scale2D,
+				axis,
+				consumeInput
+			] : mBindings
+		) {
+			if (consumedKeys.contains(key)) {
+				continue; // このキーはすでに上位コンテキストで使用されている
+			}
+
 			const bool  bIsDown     = snapshot.IsKeyDown(key);
 			const bool  bIsPressed  = snapshot.WasKeyPressed(key);
 			const bool  bIsReleased = snapshot.WasKeyReleased(key);
@@ -56,7 +73,7 @@ namespace Unnamed {
 
 				// 状態を論理ORで更新
 				auto& [existing_pressed, existing_held, existing_released] =
-						tempActionStates[target];
+					tempActionStates[target];
 
 				existing_pressed  = existing_pressed || bIsPressed;
 				existing_held     = existing_held || bIsHeld;
@@ -93,16 +110,31 @@ namespace Unnamed {
 					}
 				}
 			}
+
+			const bool hasInput =
+				bIsDown ||
+				bIsPressed ||
+				bIsReleased ||
+				analogValue != 0.0f;
+
+			if (consumeInput && hasInput) {
+				consumedByThisContext.insert(key);
+			}
 		}
+
+		consumedKeys.insert(
+			consumedByThisContext.begin(),
+			consumedByThisContext.end()
+		);
 
 		// 一時マップから最終アクション状態を更新（デバイス入力分）
 		for (const auto& [action, states] : tempActionStates) {
 			mActionStates[action].bIsPressed =
-					mActionStates[action].bIsPressed || std::get<0>(states);
+				mActionStates[action].bIsPressed || std::get<0>(states);
 			mActionStates[action].bIsHeld =
-					mActionStates[action].bIsHeld || std::get<1>(states);
+				mActionStates[action].bIsHeld || std::get<1>(states);
 			mActionStates[action].bIsReleased =
-					mActionStates[action].bIsReleased || std::get<2>(states);
+				mActionStates[action].bIsReleased || std::get<2>(states);
 		}
 
 		// 一時マップから最終的な値を計算
@@ -119,12 +151,13 @@ namespace Unnamed {
 	}
 
 	void InputMappingContext::BindAction(
-		const std::string& action, const InputKey& key
+		const std::string& action, const InputKey& key, const bool consumeInput
 	) {
 		InputBinding binding;
-		binding.key    = key;
-		binding.type   = BINDING_TYPE::ACTION;
-		binding.target = action;
+		binding.key          = key;
+		binding.type         = BINDING_TYPE::ACTION;
+		binding.target       = action;
+		binding.consumeInput = consumeInput;
 		mBindings.emplace_back(binding);
 		DevMsg(
 			kChannel,
@@ -135,13 +168,17 @@ namespace Unnamed {
 	}
 
 	void InputMappingContext::BindAxis1D(
-		const std::string& axis, const InputKey& key, float scale
+		const std::string& axis,
+		const InputKey&    key,
+		float              scale,
+		const bool         consumeInput
 	) {
 		InputBinding binding;
-		binding.key    = key;
-		binding.type   = BINDING_TYPE::AXIS_1D;
-		binding.target = axis;
-		binding.scale  = scale;
+		binding.key          = key;
+		binding.type         = BINDING_TYPE::AXIS_1D;
+		binding.target       = axis;
+		binding.scale        = scale;
+		binding.consumeInput = consumeInput;
 		mBindings.emplace_back(binding);
 		DevMsg(
 			kChannel,
@@ -153,8 +190,11 @@ namespace Unnamed {
 	}
 
 	void InputMappingContext::BindAxis2D(
-		const std::string& axis, const InputKey& key, INPUT_AXIS axisType,
-		float              scale
+		const std::string& axis,
+		const InputKey&    key,
+		INPUT_AXIS         axisType,
+		float              scale,
+		const bool         consumeInput
 	) {
 		InputBinding binding;
 		binding.key    = key;
@@ -167,7 +207,8 @@ namespace Unnamed {
 			binding.scale2D.x = 0.0f; // X軸は無視される
 			binding.scale2D.y = scale;
 		}
-		binding.axis = axisType;
+		binding.axis         = axisType;
+		binding.consumeInput = consumeInput;
 		mBindings.emplace_back(binding);
 		DevMsg(
 			kChannel,

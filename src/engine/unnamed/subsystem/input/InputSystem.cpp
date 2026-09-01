@@ -36,12 +36,15 @@ namespace Unnamed {
 	bool InputSystem::Init() {
 		ServiceLocator::Register<InputSystem>(this);
 
-		// 起動直後に何も触っていなくてもカーソルが消えるのを防ぐため、
-		// 入力システム側のデフォルトは「表示・ロック解除」に寄せておく。
+		// 起動直後に何も触っていなくてもカーソルが消えるのを防ぐため、デフォルトは「表示・ロック解除」にしておく。
 		mMouseCursorLockRequested    = false;
 		mMouseCursorLockOverride     = false;
 		mMouseCursorLockOverrideMode = false;
 		mMouseCursorVisible          = true;
+
+		// --------------------------------------------------------------------
+		// コンソールコマンドの登録
+		// --------------------------------------------------------------------
 
 		mBindCommand = std::make_unique<ConCommand>(
 			"bind",
@@ -296,12 +299,12 @@ namespace Unnamed {
 				) {
 					for (const auto& device : mDevices) {
 						if (device->GetDeviceType() !=
-							InputDeviceType::GAMEPAD) {
+						    InputDeviceType::GAMEPAD) {
 							continue;
 						}
 
 						std::static_pointer_cast<GamepadDevice>(device)
-								->RequestDirectInputRefresh();
+							->RequestDirectInputRefresh();
 					}
 				}
 				break;
@@ -485,7 +488,7 @@ namespace Unnamed {
 	}
 
 	void InputSystem::BindAxis1D(
-		const std::string& axis, const InputKey& key, float scale
+		const std::string& axis, const InputKey& key, const float scale
 	) {
 		mMappingSystem.BindAxis1D(axis, key, scale);
 	}
@@ -620,9 +623,9 @@ namespace Unnamed {
 			mMouseViewportVirtualSize.y > 0.0f
 		) {
 			localPos.x *=
-					mMouseViewportVirtualSize.x / mMouseViewportSizeOverride.x;
+				mMouseViewportVirtualSize.x / mMouseViewportSizeOverride.x;
 			localPos.y *=
-					mMouseViewportVirtualSize.y / mMouseViewportSizeOverride.y;
+				mMouseViewportVirtualSize.y / mMouseViewportSizeOverride.y;
 		}
 		return localPos;
 	}
@@ -706,12 +709,12 @@ namespace Unnamed {
 		for (auto& device : mDevices) {
 			if (device->GetDeviceType() == InputDeviceType::KEYBOARD) {
 				std::static_pointer_cast<KeyboardDevice>(device)->
-						HandleRawInput(rawInput);
+					HandleRawInput(rawInput);
 			}
 
 			if (device->GetDeviceType() == InputDeviceType::MOUSE) {
 				std::static_pointer_cast<MouseDevice>(device)->
-						HandleRawInput(rawInput);
+					HandleRawInput(rawInput);
 			}
 		}
 	}
@@ -728,9 +731,9 @@ namespace Unnamed {
 
 			const size_t firstSpace = trimmed.find(' ');
 			const size_t len        =
-					firstSpace == std::string::npos ?
-						trimmed.size() :
-						firstSpace;
+				firstSpace == std::string::npos ?
+					trimmed.size() :
+					firstSpace;
 
 			std::string out;
 			out.reserve(len);
@@ -753,7 +756,8 @@ namespace Unnamed {
 			if (bPressed) {
 				for (const auto& command : commands) {
 					console->ExecuteCommand(
-						command, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+						command,
+						EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
 					);
 				}
 			}
