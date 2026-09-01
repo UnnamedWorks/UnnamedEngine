@@ -663,6 +663,97 @@ namespace Unnamed {
 		return mSnapshot;
 	}
 
+	InputContextId InputSystem::CreateInputContext(
+		const std::string& name, const INPUT_CONTEXT_MODE mode
+	) {
+		return mMappingSystem.CreateContext(name, mode);
+	}
+
+	bool InputSystem::DestroyInputContext(const InputContextId contextId) {
+		return mMappingSystem.DestroyContext(contextId);
+	}
+
+	bool InputSystem::PushInputContext(const InputContextId contextId) {
+		return mMappingSystem.PushContext(contextId);
+	}
+
+	bool InputSystem::PopInputContext(const InputContextId contextId) {
+		return mMappingSystem.PopContext(contextId);
+	}
+
+	bool InputSystem::IsInputContextActive(
+		const InputContextId contextId
+	) const {
+		return mMappingSystem.IsContextActive(contextId);
+	}
+
+	void InputSystem::BindAction(
+		const InputContextId contextId, const std::string& action,
+		const InputKey&      key, const bool               consumeInput
+	) {
+		mMappingSystem.BindAction(contextId, action, key, consumeInput);
+	}
+
+	void InputSystem::BindAxis1D(
+		const InputContextId contextId, const std::string& axis,
+		const InputKey&      key,
+		const float          scale, const bool consumeInput
+	) {
+		mMappingSystem.BindAxis1D(contextId, axis, key, scale, consumeInput);
+	}
+
+	void InputSystem::BindAxis2D(
+		const InputContextId contextId, const std::string& axis,
+		const InputKey& key,
+		const INPUT_AXIS axisType, const float scale, const bool consumeInput
+	) {
+		mMappingSystem.BindAxis2D(
+			contextId,
+			axis,
+			key,
+			axisType,
+			scale,
+			consumeInput
+		);
+	}
+
+	bool InputSystem::IsPressed(
+		const InputContextId contextId, const std::string& action
+	) const {
+		return mMappingSystem.IsPressed(contextId, action);
+	}
+
+	bool InputSystem::IsHeld(
+		const InputContextId contextId, const std::string& action
+	) const {
+		return mMappingSystem.IsHeld(contextId, action);
+	}
+
+	bool InputSystem::IsReleased(
+		const InputContextId contextId, const std::string& action
+	) const {
+		return mMappingSystem.IsReleased(contextId, action);
+	}
+
+	float InputSystem::Axis1D(
+		const InputContextId contextId, const std::string& axis
+	) const {
+		return mMappingSystem.Axis1D(contextId, axis);
+	}
+
+	Vec2 InputSystem::Axis2D(
+		const InputContextId contextId, const std::string& axis
+	) const {
+		return mMappingSystem.Axis2D(contextId, axis);
+	}
+
+	void InputSystem::HandleExternalAction(
+		const InputContextId contextId, const std::string& action,
+		const bool           pressed
+	) {
+		return mMappingSystem.HandleExternalAction(contextId, action, pressed);
+	}
+
 	bool InputSystem::ResolveMouseCursorLockState() const {
 		return mMouseCursorLockOverride ?
 			       mMouseCursorLockOverrideMode :

@@ -146,21 +146,51 @@ namespace Unnamed {
 		/// @param hwnd ロック位置の基準となるウィンドウ
 		/// @param clientPos ロック位置のクライアント座標
 		void SetMouseCursorLockClientPosition(HWND hwnd, const Vec2& clientPos);
+
+		/// @brief マウスカーソルのロック位置をクリアします
 		void ClearMouseCursorLockAnchor();
+
+		/// @brief マウスカーソルのクライアントビューポート矩形を設定します
+		/// @param origin ビューポートの原点(クライアント座標)
+		/// @param size ビューポートのサイズ(クライアント座標)
 		void SetMouseClientViewportRect(const Vec2& origin, const Vec2& size);
+
+		/// @brief マウスカーソルのクライアントビューポート矩形を設定します（仮想サイズを指定）
+		/// @param origin ビューポートの原点(クライアント座標)
+		/// @param size ビューポートのサイズ(クライアント座標)
+		/// @param virtualSize ビューポートの仮想サイズ(クライアント座標)
 		void SetMouseClientViewportRect(
 			const Vec2& origin,
 			const Vec2& size,
 			const Vec2& virtualSize
 		);
+
+		/// @brief マウスカーソルのクライアントビューポート矩形のオーバーライドをクリアします
 		void ClearMouseClientViewportRectOverride();
 
+		/// @brief クライアント座標系でのマウス座標を取得します。
+		/// @return クライアント座標系でのマウス座標
 		[[nodiscard]] Vec2 GetMouseClientPosition() const;
+
+		/// @brief マウスカーソルのクライアントビューポートサイズを取得します。
+		/// @return マウスカーソルのクライアントビューポートサイズ
 		[[nodiscard]] Vec2 GetMouseClientViewportSize() const;
+
+		/// @brief 指定したマウスボタンが押されているかどうかを取得します
+		/// @param code 取得するマウスボタンのコード
+		/// @return 押されている場合はtrue、押されていない場合はfalse
 		[[nodiscard]] bool IsMouseButtonDown(MOUSE_INPUT_CODE code) const;
+
+		/// @brief 指定したマウスボタンがこのフレームで押されたかどうかを取得します
+		/// @param code 取得するマウスボタンのコード
+		/// @return 押された場合はtrue、押されていない場合はfalse
 		[[nodiscard]] bool WasMouseButtonPressed(
 			MOUSE_INPUT_CODE code
 		) const;
+
+		/// @brief 指定したマウスボタンがこのフレームで離されたかどうかを取得します
+		/// @param code 取得するマウスボタンのコード
+		/// @return 離された場合はtrue、離されていない場合はfalse
 		[[nodiscard]] bool WasMouseButtonReleased(
 			MOUSE_INPUT_CODE code
 		) const;
@@ -169,8 +199,92 @@ namespace Unnamed {
 		/// @return 入力状態のスナップショット
 		[[nodiscard]] const InputSnapshot& GetSnapshot() const;
 
+		//---------------------------------------------------------------------
+		// InputContext
+		//---------------------------------------------------------------------
+
+		/// @brief 入力コンテキストを作成します。
+		[[nodiscard]] InputContextId CreateInputContext(
+			const std::string& name,
+			INPUT_CONTEXT_MODE mode = INPUT_CONTEXT_MODE::PASS_THROUGH
+		);
+
+		/// @brief 入力コンテキストを削除します。
+		/// @param contextId 削除する入力コンテキストのID
+		bool DestroyInputContext(InputContextId contextId);
+
+		/// @brief 入力コンテキストを最上位へ追加します。
+		/// @param contextId 追加する入力コンテキストのID
+		bool PushInputContext(InputContextId contextId);
+
+		/// @brief 入力コンテキストをスタックから取り除きます。
+		/// @param contextId 取り除く入力コンテキストのID
+		bool PopInputContext(InputContextId contextId);
+
+		/// @brief 入力コンテキストが有効かを取得します。
+		/// @param contextId 取得する入力コンテキストのID
+		[[nodiscard]] bool IsInputContextActive(InputContextId contextId) const;
+
+		void BindAction(
+			InputContextId     contextId,
+			const std::string& action,
+			const InputKey&    key,
+			bool               consumeInput = false
+		);
+
+		void BindAxis1D(
+			InputContextId     contextId,
+			const std::string& axis,
+			const InputKey&    key,
+			float              scale        = 1.0f,
+			bool               consumeInput = false
+		);
+
+		void BindAxis2D(
+			InputContextId     contextId,
+			const std::string& axis,
+			const InputKey&    key,
+			INPUT_AXIS         axisType,
+			float              scale        = 1.0f,
+			bool               consumeInput = false
+		);
+
+		[[nodiscard]] bool IsPressed(
+			InputContextId     contextId,
+			const std::string& action
+		) const;
+
+		[[nodiscard]] bool IsHeld(
+			InputContextId     contextId,
+			const std::string& action
+		) const;
+
+		[[nodiscard]] bool IsReleased(
+			InputContextId     contextId,
+			const std::string& action
+		) const;
+
+		[[nodiscard]] float Axis1D(
+			InputContextId contextId, const std::string& axis
+		) const;
+
+		[[nodiscard]] Vec2 Axis2D(
+			InputContextId contextId, const std::string& axis
+		) const;
+
+		void HandleExternalAction(
+			InputContextId     contextId,
+			const std::string& action,
+			bool               pressed
+		);
+
 	private:
+		/// @brief マウスカーソルのロック状態を解決します
+		/// @return ロックされている場合はtrue、ロックされていない場合はfalse
 		[[nodiscard]] bool ResolveMouseCursorLockState() const;
+
+		/// @brief マウスカーソルの表示状態を解決します
+		/// @return 表示されている場合はtrue、非表示の場合はfalse
 		[[nodiscard]] bool ResolveMouseCursorVisibleState() const;
 
 		/// @brief 入力状態をリセットします
