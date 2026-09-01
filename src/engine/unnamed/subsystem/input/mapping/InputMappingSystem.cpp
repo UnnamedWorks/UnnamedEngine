@@ -57,6 +57,16 @@ namespace Unnamed {
 	InputContextId InputMappingSystem::CreateContext(
 		const std::string& name, const INPUT_CONTEXT_MODE mode
 	) {
+		// 名前が空の場合は作成しない
+		if (name.empty()) {
+			return {};
+		}
+
+	    // 同名のコンテキストが存在する場合は作成しない
+		if (FindContextIdByName(name).has_value()) {
+			return {};
+		}
+
 		const InputContextId id = {
 			.value = mNextContextId++
 		};
@@ -188,6 +198,23 @@ namespace Unnamed {
 		}
 
 		return entry->mode;
+	}
+
+	std::optional<InputContextId> InputMappingSystem::FindContextIdByName(
+		std::string_view name
+	) const {
+		const auto it = std::ranges::find_if(
+			mContexts,
+			[name](const ContextEntry& entry) {
+				return entry.name == name;
+			}
+		);
+
+		if (it == mContexts.end()) {
+			return std::nullopt;
+		}
+
+		return it->id;
 	}
 
 	void InputMappingSystem::BindAction(

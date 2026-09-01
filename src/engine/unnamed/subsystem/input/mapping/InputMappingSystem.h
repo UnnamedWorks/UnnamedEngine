@@ -2,7 +2,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <engine/unnamed/subsystem/input/mapping/InputMappingContext.h>
@@ -71,6 +73,13 @@ namespace Unnamed {
 		/// @return コンテキストのモード
 		[[nodiscard]] INPUT_CONTEXT_MODE GetContextMode(
 			InputContextId contextId
+		) const;
+
+		/// @brief 名前から入力コンテキストを検索します。
+		/// @param name 検索するコンテキスト名
+		/// @return 見つかった場合はコンテキストID、見つからなかった場合はstd::nullopt
+		[[nodiscard]] std::optional<InputContextId> FindContextIdByName(
+			std::string_view name
 		) const;
 
 		//---------------------------------------------------------------------
