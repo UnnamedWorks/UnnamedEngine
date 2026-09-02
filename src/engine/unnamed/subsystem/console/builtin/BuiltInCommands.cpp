@@ -146,8 +146,7 @@ namespace Unnamed {
 				}
 
 				// スクリプトファイルを実行する
-				ConsoleScriptParser parser;
-				parser.ParseAndExecute(Path(scriptPath));
+				ConsoleScriptParser::ParseAndExecute(Path(scriptPath));
 
 				return true;
 			},
