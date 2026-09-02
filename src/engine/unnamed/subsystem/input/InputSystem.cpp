@@ -28,6 +28,43 @@ namespace Unnamed {
 			const HWND foreground = GetForegroundWindow();
 			return foreground == hWnd;
 		}
+
+		/// @brief 入力コンテキストモードを文字列から解析します
+		/// @param value 文字列
+		/// @return 解析結果（不正な場合はstd::nullopt）
+		[[nodiscard]] std::optional<INPUT_CONTEXT_MODE> ParseInputContextMode(
+			const std::string& value
+		) {
+			if (value == "pass_through") {
+				return INPUT_CONTEXT_MODE::PASS_THROUGH;
+			}
+
+			if (value == "block_lower") {
+				return INPUT_CONTEXT_MODE::BLOCK_LOWER;
+			}
+
+			return std::nullopt;
+		}
+
+		/// @brief 引数の文字列を結合します
+		/// @param args 引数の文字列ベクター
+		/// @param beginIndex 結合を開始するインデックス
+		/// @return 結合された文字列
+		[[nodiscard]] std::string JoinArguments(
+			const std::vector<std::string>& args,
+			const size_t                    beginIndex
+		) {
+			std::string result;
+			for (size_t i = beginIndex; i < args.size(); ++i) {
+				if (!result.empty()) {
+					result += ' ';
+				}
+
+				result += args[i];
+			}
+
+			return result;
+		}
 	}
 
 	InputSystem::~InputSystem() = default;
@@ -59,21 +96,14 @@ namespace Unnamed {
 					return false;
 				}
 
-				// コマンド部分を結合
-				std::string combined;
-				for (size_t i = 1; i < args.size(); ++i) {
-					combined += args[i];
-					if (i + 1 < args.size()) {
-						combined += " ";
-					}
-				}
+				const std::string command = JoinArguments(args, 1);
 
 				BindCommand(
 					{
 						.device = key->device,
 						.code   = key->code
 					},
-					combined
+					command
 				);
 				return true;
 			},
@@ -104,6 +134,140 @@ namespace Unnamed {
 				return true;
 			},
 			"Unbind all keys."
+		);
+
+		mBindContextCommand = std::make_unique<ConCommand>(
+			"bindctx",
+			[&](const std::vector<std::string>& args) {
+				// bindctx <context> <key> <command...>
+				if (args.size() < 3) {
+					Warning(
+						kChannel,
+						"Usage: bindctx <context> <key> <command...>"
+					);
+					return false;
+				}
+
+				const std::string& contextName = args[0];
+
+				const auto contextId = mMappingSystem.FindContextIdByName(
+					contextName
+				);
+
+				if (!contextId.has_value()) {
+					Warning(
+						kChannel,
+						"Input context not found: {}",
+						contextName
+					);
+
+					return false;
+				}
+
+				const auto key = KeyNameTable::FromString(args[1]);
+
+				if (!key.has_value()) {
+					Warning(
+						kChannel,
+						"Invalid key name: {}",
+						args[1]
+					);
+					return false;
+				}
+
+				const std::string command = JoinArguments(args, 2);
+
+				if (command.empty()) {
+					return false;
+				}
+
+				BindContextCommand(*contextId, *key, command);
+
+				DevMsg(
+					kChannel,
+					"Bound command to context: context = {}, key = {}, command = {}",
+					contextName,
+					KeyNameTable::ToString(*key),
+					command
+				);
+
+				return true;
+			},
+			"Bind a command to a key in an input context. Usage: bindctx <context> <key> <command...>"
+		);
+
+		mInputContextCommand = std::make_unique<ConCommand>(
+			"inputcontext",
+			[&](const std::vector<std::string>& args) {
+				// inputcontext [コンテキスト名] [モード]
+
+				// 引数が足りないので失敗
+				if (args.size() != 2) {
+					Warning(
+						kChannel,
+						"Usage: inputcontext <name> <pass_through|block_lower>"
+					);
+					return false;
+				}
+
+				const std::string& name = args[0];
+
+				const auto mode = ParseInputContextMode(args[1]);
+
+				// モードが解析不可なので失敗
+				if (!mode.has_value()) {
+					Warning(
+						kChannel,
+						"Invalid input context mode: {}",
+						args[1]
+					);
+					return false;
+				}
+
+				// 既存のコンテキストならモードだけ更新
+				if (
+					const auto existing = mMappingSystem.FindContextIdByName(
+						name
+					);
+					existing.has_value()
+				) {
+					// モードを更新
+					if (!mMappingSystem.SetContextMode(*existing, *mode)) {
+						Warning(
+							kChannel,
+							"Failed to set mode for input context: {}",
+							name
+						);
+						return false;
+					}
+
+					DevMsg(kChannel, "Input Context Updated: {}", name);
+
+					return true;
+				}
+
+				// なければ新規作成
+				const InputContextId contextId = mMappingSystem.CreateContext(
+					name,
+					*mode
+				);
+
+				// 作成に失敗
+				if (!contextId.IsValid()) {
+					Warning(
+						kChannel,
+						"Failed to create input context: {}",
+						name
+					);
+					return false;
+				}
+
+				DevMsg(kChannel, "Input Context Created: {}", name);
+
+				return true;
+			},
+			"Define an input context."
+			"Usage: inputcontext <name> <pass_through|block_lower>"
 		);
 
 		auto ToggleCursorLockHandler = [&](const std::vector<std::string>&) {
@@ -223,6 +387,10 @@ namespace Unnamed {
 		mBindCommand.reset();
 		mUnbindCommand.reset();
 		mUnbindAllCommand.reset();
+
+		mBindContextCommand.reset();
+		mInputContextCommand.reset();
+
 		mToggleLockCursorCommand.reset();
 		mToggleCursorLockCommand.reset();
 	}
@@ -326,10 +494,9 @@ namespace Unnamed {
 		const bool bCursorLocked  = ResolveMouseCursorLockState();
 		const bool bCursorVisible = ResolveMouseCursorVisibleState();
 
-		// 非アクティブ中は OS 側の挙動や他 UI による ShowCursor 操作と競合しやすいので、
-		// カーソルは必ず「表示」に寄せる。
+		// 非アクティブ時にカーソルが非表示になっている場合、OS 側のカーソル表示状態を強制的に可視に収束させる
 		if (!bActive && !bCursorVisible) {
-			// const 関数のため、表示状態そのものは変えずに OS 側だけ可視へ収束させる
+			// ShowCursor の戻り値: 0 以上なら表示、0 未満なら非表示
 			sLastCursorVisible          = true;
 			constexpr int maxIterations = 32;
 			int           it            = 0;
@@ -404,8 +571,6 @@ namespace Unnamed {
 		}
 	}
 
-	/// @brief 入力デバイスを登録します
-	/// @param device 登録する入力デバイスの共有ポインタ
 	void InputSystem::RegisterDevice(
 		const std::shared_ptr<BaseInputDevice>& device
 	) {
@@ -466,11 +631,13 @@ namespace Unnamed {
 	}
 
 	std::string InputSystem::GetBoundCommand(const InputKey& key) const {
+		// すでに同じキーのバインディングが存在するか確認
 		const auto it = mCommandBinds.find(key);
 		if (it == mCommandBinds.end() || it->second.empty()) {
 			return {};
 		}
 
+		// コマンドを結合して返す
 		std::string combined;
 		for (size_t i = 0; i < it->second.size(); ++i) {
 			combined += it->second[i];
@@ -522,16 +689,10 @@ namespace Unnamed {
 		return mMappingSystem.IsReleased(action);
 	}
 
-	/// @brief 指定した1D軸の値を取得します
-	/// @param axis 軸名
-	/// @return 軸の値
 	float InputSystem::Axis1D(const std::string& axis) const {
 		return mMappingSystem.Axis1D(axis);
 	}
 
-	/// @brief 指定した2D軸の値を取得します
-	/// @param axis 軸名
-	/// @return 軸の値
 	Vec2 InputSystem::Axis2D(const std::string& axis) const {
 		return mMappingSystem.Axis2D(axis);
 	}
@@ -752,6 +913,40 @@ namespace Unnamed {
 		const bool           pressed
 	) {
 		return mMappingSystem.HandleExternalAction(contextId, action, pressed);
+	}
+
+	void InputSystem::BindContextCommand(
+		const InputContextId contextId, const InputKey& key,
+		const std::string&   command
+	) {
+		// すでに同じコンテキストIDとキーのバインディングが存在するか確認
+		const auto it = std::ranges::find_if(
+			mContextCommandBinds,
+			[&](const InputContextCommandBinding& binding) {
+				return binding.contextId == contextId && binding.key == key;
+			}
+		);
+
+		// 存在する場合はコマンドを追加
+		if (it != mContextCommandBinds.end()) {
+			if (!std::ranges::contains(it->commands, command)) {
+				it->commands.emplace_back(command);
+			}
+
+			return;
+		}
+
+		// 存在しない場合は新しいバインディングを作成
+		InputContextCommandBinding binding = {
+			.contextId = contextId,
+			.key       = key
+		};
+
+		// コマンドを追加
+		binding.commands.emplace_back(command);
+
+		// 新しいバインディングをリストに追加
+		mContextCommandBinds.emplace_back(std::move(binding));
 	}
 
 	bool InputSystem::ResolveMouseCursorLockState() const {

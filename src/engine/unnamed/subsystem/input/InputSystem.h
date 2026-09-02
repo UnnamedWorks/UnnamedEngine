@@ -101,19 +101,19 @@ namespace Unnamed {
 			const std::string& action, const bool& bPressed
 		);
 
-		/// @brief 指定したアクションの状態を取得します
-		/// @param action 取得するアクションの名前
-		/// @return 押下状態、保持状態、解放状態
+		/// @brief 指定したアクションが押下されているかを取得します
+		/// @param action 取得するアクション名
+		/// @return 押下されている場合はtrue、押下されていない場合はfalse
 		[[nodiscard]] bool IsPressed(const std::string& action) const;
 
-		/// @brief 指定したアクションの状態を取得します
-		/// @param action 取得するアクションの名前
-		/// @return 押下状態、保持状態、解放状態
+		/// @brief 指定したアクションが保持されているかを取得します
+		/// @param action 取得するアクション名
+		/// @return 保持されている場合はtrue、保持されていない場合はfalse
 		[[nodiscard]] bool IsHeld(const std::string& action) const;
 
-		/// @brief 指定したアクションの状態を取得します
-		/// @param action 取得するアクションの名前
-		/// @return 押下状態、保持状態、解放状態
+		/// @brief 指定したアクションが解放されているかを取得します
+		/// @param action 取得するアクション名
+		/// @return 解放されている場合はtrue、解放されていない場合はfalse
 		[[nodiscard]] bool IsReleased(const std::string& action) const;
 
 		/// @brief 指定した1D軸の値を取得します
@@ -225,6 +225,11 @@ namespace Unnamed {
 		/// @param contextId 取得する入力コンテキストのID
 		[[nodiscard]] bool IsInputContextActive(InputContextId contextId) const;
 
+		/// @brief 入力コンテキストにアクションをバインドします。
+		/// @param contextId バインドする入力コンテキストのID
+		/// @param action バインドするアクション名
+		/// @param key バインドする入力キー
+		/// @param consumeInput 入力を消費するかどうか（デフォルトはfalse）
 		void BindAction(
 			InputContextId     contextId,
 			const std::string& action,
@@ -232,6 +237,12 @@ namespace Unnamed {
 			bool               consumeInput = false
 		);
 
+		/// @brief 入力コンテキストに1D軸をバインドします。
+		/// @param contextId バインドする入力コンテキストのID
+		/// @param axis バインドする軸名
+		/// @param key バインドする入力キー
+		/// @param scale スケール値（デフォルトは1.0f）
+		/// @param consumeInput 入力を消費するかどうか（デフォルトはfalse）
 		void BindAxis1D(
 			InputContextId     contextId,
 			const std::string& axis,
@@ -240,6 +251,13 @@ namespace Unnamed {
 			bool               consumeInput = false
 		);
 
+		/// @brief 入力コンテキストに2D軸をバインドします。
+		/// @param contextId バインドする入力コンテキストのID
+		/// @param axis バインドする軸名
+		/// @param key バインドする入力キー
+		/// @param axisType 軸のタイプ
+		/// @param scale スケール値（デフォルトは1.0f）
+		/// @param consumeInput 入力を消費するかどうか（デフォルトはfalse）
 		void BindAxis2D(
 			InputContextId     contextId,
 			const std::string& axis,
@@ -249,36 +267,76 @@ namespace Unnamed {
 			bool               consumeInput = false
 		);
 
+		/// @brief 指定したアクションが押下されているかを取得します
+		/// @param contextId 取得する入力コンテキストのID
+		/// @param action 取得するアクション名
+		/// @return 押下されている場合はtrue、押下されていない場合はfalse
 		[[nodiscard]] bool IsPressed(
 			InputContextId     contextId,
 			const std::string& action
 		) const;
 
+		/// @brief 指定したアクションが保持されているかを取得します
+		/// @param contextId 取得する入力コンテキストのID
+		/// @param action 取得するアクション名
+		/// @return 保持されている場合はtrue、保持されていない場合はfalse
 		[[nodiscard]] bool IsHeld(
 			InputContextId     contextId,
 			const std::string& action
 		) const;
 
+		/// @brief 指定したアクションが解放されているかを取得します
+		/// @param contextId 取得する入力コンテキストのID
+		/// @param action 取得するアクション名
+		/// @return 解放されている場合はtrue、解放されていない場合はfalse
 		[[nodiscard]] bool IsReleased(
 			InputContextId     contextId,
 			const std::string& action
 		) const;
 
+		/// @brief 指定した1D軸の値を取得します
+		/// @param contextId 取得する入力コンテキストのID
+		/// @param axis 取得する軸の名前
+		/// @return 軸の値
 		[[nodiscard]] float Axis1D(
 			InputContextId contextId, const std::string& axis
 		) const;
 
+		/// @brief 指定した2D軸の値を取得します
+		/// @param contextId 取得する入力コンテキストのID
+		/// @param axis 取得する軸の名前
+		/// @return 軸の値
 		[[nodiscard]] Vec2 Axis2D(
 			InputContextId contextId, const std::string& axis
 		) const;
 
+		/// @brief 外部からのアクション入力を処理します
+		/// @param contextId 取得する入力コンテキストのID
+		/// @param action 取得するアクション名
+		/// @param pressed 押下状態（trueなら押下、falseなら解放）
 		void HandleExternalAction(
 			InputContextId     contextId,
 			const std::string& action,
 			bool               pressed
 		);
 
+		/// @brief 入力コンテキストに属するコンソールコマンドをキーへバインドします
+		/// @param contextId バインド先の入力コンテキスト
+		/// @param key 入力キー
+		/// @param command 実行するコンソールコマンド
+		void BindContextCommand(
+			InputContextId     contextId, const InputKey& key,
+			const std::string& command
+		);
+
 	private:
+		struct InputContextCommandBinding {
+			InputContextId contextId;
+			InputKey       key;
+
+			std::vector<std::string> commands;
+		};
+
 		/// @brief マウスカーソルのロック状態を解決します
 		/// @return ロックされている場合はtrue、ロックされていない場合はfalse
 		[[nodiscard]] bool ResolveMouseCursorLockState() const;
@@ -301,6 +359,8 @@ namespace Unnamed {
 		InputMappingSystem mMappingSystem;
 
 		std::unordered_map<InputKey, std::vector<std::string>> mCommandBinds;
+
+		std::vector<InputContextCommandBinding> mContextCommandBinds;
 
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;
 
@@ -325,6 +385,10 @@ namespace Unnamed {
 		std::unique_ptr<ConCommand> mBindCommand;
 		std::unique_ptr<ConCommand> mUnbindCommand;
 		std::unique_ptr<ConCommand> mUnbindAllCommand;
+		
+		std::unique_ptr<ConCommand> mBindContextCommand;
+		std::unique_ptr<ConCommand> mInputContextCommand;
+
 		std::unique_ptr<ConCommand> mToggleLockCursorCommand;
 		std::unique_ptr<ConCommand> mToggleCursorLockCommand;
 	};
