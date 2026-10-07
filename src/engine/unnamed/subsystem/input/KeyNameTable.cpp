@@ -42,7 +42,8 @@ namespace Unnamed {
 		ret.reserve(str.size());
 		std::ranges::transform(
 			str,
-			std::back_inserter(ret), [](const unsigned char c) {
+			std::back_inserter(ret),
+			[](const unsigned char c) {
 				return std::tolower(c);
 			}
 		);
