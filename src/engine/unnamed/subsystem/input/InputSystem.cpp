@@ -1,7 +1,10 @@
-#include <pch.h>
-
 #include <algorithm>
+#include <Dbt.h>
+#include <optional>
+#include <pch.h>
 #include <ranges>
+#include <unordered_set>
+#include <utility>
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
@@ -11,8 +14,6 @@
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
-
-#include <Dbt.h>
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Input";
@@ -69,7 +70,6 @@ namespace Unnamed {
 
 	InputSystem::~InputSystem() = default;
 
-	/// @brief 初期化
 	bool InputSystem::Init() {
 		ServiceLocator::Register<InputSystem>(this);
 
@@ -139,16 +139,24 @@ namespace Unnamed {
 		mBindContextCommand = std::make_unique<ConCommand>(
 			"bindctx",
 			[&](const std::vector<std::string>& args) {
-				// bindctx <context> <key> <command...>
-				if (args.size() < 3) {
+				// bindctx [--consume] <context> <key> <command...>
+				bool   consumeInput   = false;
+				size_t argumentOffset = 0;
+
+				if (!args.empty() && args[0] == "--consume") {
+					consumeInput   = true;
+					argumentOffset = 1;
+				}
+
+				if (args.size() < argumentOffset + 3) {
 					Warning(
 						kChannel,
-						"Usage: bindctx <context> <key> <command...>"
+						"Usage: bindctx [--consume] <context> <key> <command...>"
 					);
 					return false;
 				}
 
-				const std::string& contextName = args[0];
+				const std::string& contextName = args[argumentOffset];
 
 				const auto contextId = mMappingSystem.FindContextIdByName(
 					contextName
@@ -164,24 +172,29 @@ namespace Unnamed {
 					return false;
 				}
 
-				const auto key = KeyNameTable::FromString(args[1]);
+				const auto key = KeyNameTable::FromString(
+					args[argumentOffset + 1]
+				);
 
 				if (!key.has_value()) {
 					Warning(
 						kChannel,
 						"Invalid key name: {}",
-						args[1]
+						args[argumentOffset + 1]
 					);
 					return false;
 				}
 
-				const std::string command = JoinArguments(args, 2);
+				const std::string command = JoinArguments(
+					args,
+					argumentOffset + 2
+				);
 
 				if (command.empty()) {
 					return false;
 				}
 
-				BindContextCommand(*contextId, *key, command);
+				BindContextCommand(*contextId, *key, command, consumeInput);
 
 				DevMsg(
 					kChannel,
@@ -193,7 +206,8 @@ namespace Unnamed {
 
 				return true;
 			},
-			"Bind a command to a key in an input context. Usage: bindctx <context> <key> <command...>"
+			"Bind a command to a key in an input context. "
+			"Usage: bindctx [--consume] <context> <key> <command...>"
 		);
 
 		mInputContextCommand = std::make_unique<ConCommand>(
@@ -306,7 +320,6 @@ namespace Unnamed {
 		return true;
 	}
 
-	/// @brief 更新
 	void InputSystem::Update(float) {
 		// このフレームのアクションと軸を同じデバイス状態から組み立てる
 		for (const auto& inputDevice : mDevices) {
@@ -372,7 +385,7 @@ namespace Unnamed {
 
 		// 評価
 		mMappingSystem.Evaluate(mSnapshot);
-
+		
 		//マウスのデルタをリセット
 		for (const auto& device : mDevices) {
 			if (device->GetDeviceType() == InputDeviceType::MOUSE) {
@@ -384,6 +397,10 @@ namespace Unnamed {
 	}
 
 	void InputSystem::Shutdown() {
+		// TODO: ServiceLocatorは極力使わないように
+		auto* console = ServiceLocator::Get<ConsoleSystem>();
+		ReleaseAllActiveCommands(console);
+
 		mBindCommand.reset();
 		mUnbindCommand.reset();
 		mUnbindAllCommand.reset();
@@ -395,17 +412,10 @@ namespace Unnamed {
 		mToggleCursorLockCommand.reset();
 	}
 
-	/// @brief サブシステム名の取得
 	const std::string_view InputSystem::GetName() const {
 		return "InputSystem";
 	}
 
-	/// @brief Win32メッセージの処理
-	/// @param hWnd ウィンドウハンドル
-	/// @param msg メッセージID
-	/// @param wParam メッセージのWPARAM
-	/// @param lParam メッセージのLPARAM
-	/// @return メッセージが処理された場合はtrue、そうでない場合はfalse
 	bool InputSystem::OnWin32Message(
 		[[maybe_unused]] HWND hWnd,
 		const UINT            msg,
@@ -917,7 +927,7 @@ namespace Unnamed {
 
 	void InputSystem::BindContextCommand(
 		const InputContextId contextId, const InputKey& key,
-		const std::string&   command
+		const std::string&   command, const bool        consumeInput
 	) {
 		// すでに同じコンテキストIDとキーのバインディングが存在するか確認
 		const auto it = std::ranges::find_if(
@@ -933,13 +943,18 @@ namespace Unnamed {
 				it->commands.emplace_back(command);
 			}
 
+			// 同じコンテキスト+キーのどれかがConsumeならこのキーは下位コンテキストに渡さない
+			it->consumeInput |= consumeInput;
+
 			return;
 		}
 
 		// 存在しない場合は新しいバインディングを作成
 		InputContextCommandBinding binding = {
-			.contextId = contextId,
-			.key       = key
+			.contextId    = contextId,
+			.key          = key,
+			.commands     = {},
+			.consumeInput = consumeInput
 		};
 
 		// コマンドを追加
@@ -962,19 +977,24 @@ namespace Unnamed {
 		return mMouseCursorVisible;
 	}
 
-	/// @brief 入力状態をリセットします
 	void InputSystem::ResetInputStates() {
 		DevMsg(
 			kChannel,
 			"ウィンドウが非アクティブになったため、入力状態をリセットします。"
 		);
 
-		// 物理入力のスナップショットをリセット
+		// TODO: ServiceLocatorは極力使わないように なんかキモいし。
+		auto* console = ServiceLocator::Get<ConsoleSystem>();
+
+		// +commandを解放
+		ReleaseAllActiveCommands(console);
+
+		// 物理入力をリセット
 		mSnapshot.mCurrentKeyStates.clear();
 		mSnapshot.mPreviousKeyStates.clear();
 		mSnapshot.mAnalogValues.clear();
 
-		// 論理入力状態をリセット
+		// 論理入力をリセット
 		mMappingSystem.ResetStates();
 
 		// デバイス内部の入力状態をリセット
@@ -989,8 +1009,6 @@ namespace Unnamed {
 		mSnapshot.mMouseClientViewportSize = Vec2::zero;
 	}
 
-	/// @brief RAW Inputの処理
-	/// @param rawInput RAW Inputデータ
 	void InputSystem::OnRawInput(const RAWINPUT& rawInput) const {
 		for (auto& device : mDevices) {
 			if (device->GetDeviceType() == InputDeviceType::KEYBOARD) {
@@ -1007,10 +1025,12 @@ namespace Unnamed {
 
 	namespace {
 		/// @brief 押下コマンドから離脱コマンドを生成します
-		/// @param cmd 押下コマンド文字列
+		/// @param pressCommand 押下コマンド文字列
 		/// @return 離脱コマンド文字列（押下コマンドでない場合は空文字列）
-		std::string MakeReleaseCommandFromPress(const std::string& cmd) {
-			const std::string trimmed = StrUtil::TrimSpaces(cmd);
+		std::optional<std::string> MakeReleaseCommandFromPress(
+			const std::string& pressCommand
+		) {
+			const std::string trimmed = StrUtil::TrimSpaces(pressCommand);
 			if (trimmed.empty() || trimmed[0] != '+') {
 				return {};
 			}
@@ -1030,38 +1050,228 @@ namespace Unnamed {
 	}
 
 	void InputSystem::ProcessCommandBinds() {
+		// TODO: ServiceLocatorは極力使わないように なんかキモいし。
 		auto* console = ServiceLocator::Get<ConsoleSystem>();
 		if (!console) {
 			return;
 		}
 
-		for (const auto& [key, commands] : mCommandBinds) {
-			const bool bPressed  = mSnapshot.WasKeyPressed(key);
-			const bool bReleased = mSnapshot.WasKeyReleased(key);
+		const auto globalBinds = mCommandBinds;
 
-			if (bPressed) {
-				for (const auto& command : commands) {
+		// コマンドバインドの処理
+		for (const auto& [key, commands] : globalBinds) {
+			if (!mSnapshot.WasKeyPressed(key)) {
+				continue;
+			}
+
+			for (const auto& command : commands) {
+				console->ExecuteCommand(
+					command,
+					EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+				);
+
+				RegisterActiveCommand(std::nullopt, key, command);
+			}
+		}
+
+		// --------------------------------------------------------------------
+		// Active Command Release
+		// --------------------------------------------------------------------
+
+		ProcessActiveCommandReleases(*console);
+
+		// --------------------------------------------------------------------
+		// Context Command Press
+		// --------------------------------------------------------------------
+
+		// コマンド実行中のbindctxによる変更から走査を保護する
+		const auto contextBinds = mContextCommandBinds;
+
+		const auto contexts = mMappingSystem.GetReceivingContextsTopToBottom();
+
+		std::unordered_set<InputKey> consumedKeys;
+
+		for (const InputContextId contextId : contexts) {
+			// コマンド実行によってコンテキストスタックが変化している可能性がある
+			if (!mMappingSystem.IsContextReceivingInput(contextId)) {
+				continue;
+			}
+
+			std::unordered_set<InputKey> consumedByThisContext;
+
+			for (const auto& binding : contextBinds) {
+				if (binding.contextId != contextId) {
+					continue;
+				}
+
+				//-------------------------------------------------------------
+				// 上位コンテキストで既にConsumeされている
+				//-------------------------------------------------------------
+
+				if (consumedKeys.contains(binding.key)) {
+					continue;
+				}
+
+				const bool  bIsDown     = mSnapshot.IsKeyDown(binding.key);
+				const bool  bIsPressed  = mSnapshot.WasKeyPressed(binding.key);
+				const bool  bIsReleased = mSnapshot.WasKeyReleased(binding.key);
+				const float analogValue = mSnapshot.GetAnalogValue(binding.key);
+
+				// 入力があるか?
+				const bool hasInput =
+					bIsDown || bIsPressed || bIsReleased || analogValue != 0.0f;
+
+				if (binding.consumeInput && hasInput) {
+					consumedByThisContext.emplace(binding.key);
+
+					mMappingSystem.RegisterConsumedKey(
+						contextId,
+						binding.key
+					);
+				}
+
+				// コマンド自体はPress時だけ実行
+				if (!bIsPressed) {
+					continue;
+				}
+
+				for (const auto& command : binding.commands) {
+					// 直前のコマンドでコンテキストスタックが変わった可能性がある
+					if (
+						!mMappingSystem.IsContextReceivingInput(
+							binding.contextId
+						)
+					) {
+						break;
+					}
+
+					DevMsg(
+						kChannel,
+						"[D3 TEST] ContextCommand: context={}, key={}, command={}",
+						binding.contextId.value,
+						KeyNameTable::ToString(binding.key),
+						command
+					);
+
 					console->ExecuteCommand(
 						command,
 						EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
 					);
-				}
-			}
 
-			if (bReleased) {
-				for (const auto& command : commands) {
-					const auto releasedCommand = MakeReleaseCommandFromPress(
+					RegisterActiveCommand(
+						binding.contextId,
+						binding.key,
 						command
 					);
-
-					if (!releasedCommand.empty()) {
-						console->ExecuteCommand(
-							releasedCommand,
-							EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
-						);
-					}
 				}
 			}
+
+			//-----------------------------------------------------------------
+			// このコンテキストを全部処理した後、下位コンテキスト向けにConsumeを有効化
+			//-----------------------------------------------------------------
+
+			consumedKeys.insert(
+				consumedByThisContext.begin(),
+				consumedByThisContext.end()
+			);
+		}
+	}
+
+	void InputSystem::RegisterActiveCommand(
+		const std::optional<InputContextId> contextId, const InputKey& key,
+		const std::string&                  pressCommand
+	) {
+		// +command でなければRelease管理は不要
+		if (!MakeReleaseCommandFromPress(pressCommand).has_value()) {
+			return;
+		}
+
+		const bool bAlreadyActive =
+			std::ranges::any_of(
+				mActiveCommands,
+				[&](const ActiveCommand& active) {
+					return active.contextId == contextId &&
+					       active.key == key &&
+					       active.pressCommand == pressCommand;
+				}
+			);
+
+		if (bAlreadyActive) {
+			return;
+		}
+
+		mActiveCommands.emplace_back(
+			ActiveCommand{
+				.contextId = contextId, .key = key, .pressCommand = pressCommand
+			}
+		);
+	}
+
+	void InputSystem::ProcessActiveCommandReleases(ConsoleSystem& console) {
+		auto activeCommands = std::move(mActiveCommands);
+
+		mActiveCommands.clear();
+
+		for (auto& active : activeCommands) {
+			const bool bKeyReleased = mSnapshot.WasKeyReleased(active.key);
+
+			bool bContextBlocked = false;
+
+			if (active.contextId.has_value()) {
+				bContextBlocked = !mMappingSystem.IsContextReceivingInput(
+					*active.contextId
+				);
+			}
+
+			if (!bKeyReleased && !bContextBlocked) {
+				mActiveCommands.emplace_back(std::move(active));
+				continue;
+			}
+
+			const auto releaseCommand = MakeReleaseCommandFromPress(
+				active.pressCommand
+			);
+
+			if (!releaseCommand.has_value()) {
+				continue;
+			}
+
+			console.ExecuteCommand(
+				*releaseCommand,
+				EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+			);
+		}
+	}
+
+	void InputSystem::ReleaseAllActiveCommands(ConsoleSystem* console) {
+		const auto activeCommands = std::move(mActiveCommands);
+
+		mActiveCommands.clear();
+
+		if (!console) {
+			return;
+		}
+
+		for (const auto& active : activeCommands) {
+			const auto releaseCommand = MakeReleaseCommandFromPress(
+				active.pressCommand
+			);
+
+			if (!releaseCommand.has_value()) {
+				continue;
+			}
+
+			DevMsg(
+				kChannel,
+				"[TEST] Forced Release: key={}, command={}",
+				KeyNameTable::ToString(active.key),
+				*releaseCommand
+			);
+
+			console->ExecuteCommand(
+				*releaseCommand,
+				EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+			);
 		}
 	}
 }

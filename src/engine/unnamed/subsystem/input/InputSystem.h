@@ -1,32 +1,49 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <engine/IWin32MsgListener.h>
 #include <engine/unnamed/subsystem/input/InputSnapshot.h>
 #include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
-#include <engine/unnamed/subsystem/interface/ISubsystem.h>
 #include <engine/unnamed/subsystem/input/mapping/InputMappingSystem.h>
+#include <engine/unnamed/subsystem/interface/ISubsystem.h>
 
 namespace Unnamed {
 	class ConCommand;
+	class ConsoleSystem;
 
 	/// @brief InputSystemは、入力の初期化、フレーム更新、および終了順序を統括します
 	class InputSystem final : public ISubsystem, public IWin32MsgListener {
 	public:
 		~InputSystem() override;
 
+		//---------------------------------------------------------------------
 		// ISubsystem
+		//---------------------------------------------------------------------
 		bool Init() override;
 		void Update(float) override;
 		void Shutdown() override;
 
 		[[nodiscard]] const std::string_view GetName() const override;
 
+		//---------------------------------------------------------------------
 		// IWin32MsgListener
-		bool OnWin32Message(HWND, UINT, WPARAM, LPARAM) override;
+		//---------------------------------------------------------------------
+		/// @brief Win32メッセージの処理
+		/// @param hWnd ウィンドウハンドル
+		/// @param msg メッセージID
+		/// @param wParam メッセージのWPARAM
+		/// @param lParam メッセージのLPARAM
+		/// @return メッセージが処理された場合はtrue、そうでない場合はfalse
+		bool OnWin32Message(
+			HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
+		) override;
 
+		//---------------------------------------------------------------------
+		// InputSystem
 		//---------------------------------------------------------------------
 
 		/// @brief マウスカーソルのロックと表示状態をチェックします
@@ -199,9 +216,7 @@ namespace Unnamed {
 		/// @return 入力状態のスナップショット
 		[[nodiscard]] const InputSnapshot& GetSnapshot() const;
 
-		//---------------------------------------------------------------------
-		// InputContext
-		//---------------------------------------------------------------------
+		// ------ InputContext ------------------------------------------------
 
 		/// @brief 入力コンテキストを作成します。
 		[[nodiscard]] InputContextId CreateInputContext(
@@ -324,9 +339,10 @@ namespace Unnamed {
 		/// @param contextId バインド先の入力コンテキスト
 		/// @param key 入力キー
 		/// @param command 実行するコンソールコマンド
+		/// @param consumeInput 入力を消費するかどうか
 		void BindContextCommand(
 			InputContextId     contextId, const InputKey& key,
-			const std::string& command
+			const std::string& command, bool              consumeInput
 		);
 
 	private:
@@ -335,6 +351,16 @@ namespace Unnamed {
 			InputKey       key;
 
 			std::vector<std::string> commands;
+
+			bool consumeInput = false;
+		};
+
+		struct ActiveCommand {
+			// コンテキストの場合はContextID、グローバルの場合は std::nullopt
+			std::optional<InputContextId> contextId;
+
+			InputKey    key;
+			std::string pressCommand;
 		};
 
 		/// @brief マウスカーソルのロック状態を解決します
@@ -355,13 +381,38 @@ namespace Unnamed {
 		/// @brief コマンドバインドを押下/解放に応じて実行します
 		void ProcessCommandBinds();
 
+		/// @brief Releaseが必要なコマンドをアクティブとして登録します。
+		/// @param contextId コンテキストID（グローバルの場合はstd::nullopt）
+		/// @param key 入力キー
+		/// @param pressCommand 押下コマンド文字列
+		void RegisterActiveCommand(
+			std::optional<InputContextId> contextId,
+			const InputKey&               key,
+			const std::string&            pressCommand
+		);
+
+		/// @brief 現在Release条件を満たしているActiveCommandを解放します。
+		/// @param console コンソールシステム
+		void ProcessActiveCommandReleases(ConsoleSystem& console);
+
+		/// @brief すべてのアクティブコマンドを強制的に解放します。
+		void ReleaseAllActiveCommands(ConsoleSystem* console);
+
+		//---------------------------------------------------------------------
+
 		InputSnapshot      mSnapshot;
 		InputMappingSystem mMappingSystem;
 
+		// コマンドバインドのマップ（キー -> コマンド文字列のリスト）
 		std::unordered_map<InputKey, std::vector<std::string>> mCommandBinds;
 
+		// コンテキストに属するコマンドバインド
 		std::vector<InputContextCommandBinding> mContextCommandBinds;
 
+		// コンテキストが入力権を失ったことを検知する
+		std::vector<ActiveCommand> mActiveCommands;
+
+		// 入力デバイスのリスト
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;
 
 		/// @brief MouseLockAnchorは、mouse lock開始時のscreen座標とclient座標を復帰位置として保持します
@@ -385,7 +436,7 @@ namespace Unnamed {
 		std::unique_ptr<ConCommand> mBindCommand;
 		std::unique_ptr<ConCommand> mUnbindCommand;
 		std::unique_ptr<ConCommand> mUnbindAllCommand;
-		
+
 		std::unique_ptr<ConCommand> mBindContextCommand;
 		std::unique_ptr<ConCommand> mInputContextCommand;
 
