@@ -12,6 +12,8 @@ namespace Unnamed {
 	}
 
 	void InputMappingSystem::BeginFrame() {
+		mExternalConsumedKeys.clear();
+
 		for (const InputContextId contextId : mContextStack) {
 			// ReSharper disable once CppLocalVariableMayBeConst
 			auto* entry = FindContext(contextId);
@@ -40,6 +42,26 @@ namespace Unnamed {
 
 			entry->context->Evaluate(snapshot, consumedKeys);
 
+			//-----------------------------------------------------------------
+			// bindctx等によってこのコンテキストでConsumeされたキーを下位コンテキスト向けに追加 
+			//-----------------------------------------------------------------
+
+			const auto externalIt = std::ranges::find_if(
+				mExternalConsumedKeys,
+				[&](const ExternalConsumedContext& consumed) {
+					return consumed.contextId == entry->id;
+				}
+			);
+
+			if (
+				externalIt != mExternalConsumedKeys.end()
+			) {
+				consumedKeys.insert(
+					externalIt->keys.begin(),
+					externalIt->keys.end()
+				);
+			}
+
 			// ブロッキング
 			if (entry->mode == INPUT_CONTEXT_MODE::BLOCK_LOWER) {
 				break;
@@ -62,7 +84,7 @@ namespace Unnamed {
 			return {};
 		}
 
-	    // 同名のコンテキストが存在する場合は作成しない
+		// 同名のコンテキストが存在する場合は作成しない
 		if (FindContextIdByName(name).has_value()) {
 			return {};
 		}
@@ -347,11 +369,66 @@ namespace Unnamed {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		auto* entry = FindContext(contextId);
 
-		if (!entry || !IsContextReceivingInput(contextId)) {
+		if (!entry) {
+			return;
+		}
+
+		// Pressはコンテキストによって制限する。Releaseは既存入力状態を解除するために通す。
+		if (
+			pressed &&
+			!IsContextReceivingInput(contextId)
+		) {
 			return;
 		}
 
 		entry->context->HandleExternalAction(action, pressed);
+	}
+
+	void InputMappingSystem::RegisterConsumedKey(
+		InputContextId contextId, const InputKey& key
+	) {
+		const auto it = std::ranges::find_if(
+			mExternalConsumedKeys,
+			[contextId](const ExternalConsumedContext& entry) {
+				return entry.contextId == contextId;
+			}
+		);
+
+		if (it != mExternalConsumedKeys.end()) {
+			it->keys.emplace(key);
+			return;
+		}
+
+		ExternalConsumedContext entry = {
+			.contextId = contextId
+		};
+
+		entry.keys.emplace(key);
+
+		mExternalConsumedKeys.emplace_back(std::move(entry));
+	}
+
+	std::vector<InputContextId> InputMappingSystem::
+	GetReceivingContextsTopToBottom() const {
+		std::vector<InputContextId> result;
+
+		for (
+			auto it = mContextStack.rbegin(); it != mContextStack.rend(); ++it
+		) {
+			const auto* entry = FindContext(*it);
+
+			if (!entry) {
+				continue;
+			}
+
+			result.emplace_back(entry->id);
+
+			if (entry->mode == INPUT_CONTEXT_MODE::BLOCK_LOWER) {
+				break;
+			}
+		}
+
+		return result;
 	}
 
 	void InputMappingSystem::BindAction(

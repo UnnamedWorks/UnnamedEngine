@@ -181,6 +181,16 @@ namespace Unnamed {
 			InputContextId contextId, const std::string& action, bool pressed
 		);
 
+		/// @brief 外部の入力処理が、このコンテキストでキーを消費したことを登録します。
+		/// @param contextId 入力コンテキストID
+		/// @param key 消費された入力キー
+		void RegisterConsumedKey(InputContextId contextId, const InputKey& key);
+
+		/// @brief 現在入力を受け取れるコンテキストを上位から順番に取得します。
+		/// @return 入力を受け取れるコンテキストIDのリスト（上位から順番）
+		[[nodiscard]]
+		std::vector<InputContextId> GetReceivingContextsTopToBottom() const;
+
 		//---------------------------------------------------------------------
 		// DEPRECATED 従来API
 		//---------------------------------------------------------------------
@@ -240,9 +250,7 @@ namespace Unnamed {
 		/// @brief 外部からのアクション入力を処理します
 		/// @param action アクション名
 		/// @param pressed 押下状態（trueなら押下、falseなら解放）
-		void HandleExternalAction(
-			const std::string& action, bool pressed
-		);
+		void HandleExternalAction(const std::string& action, bool pressed);
 
 	private:
 		struct ContextEntry {
@@ -252,6 +260,11 @@ namespace Unnamed {
 			std::unique_ptr<InputMappingContext> context;
 
 			INPUT_CONTEXT_MODE mode = INPUT_CONTEXT_MODE::PASS_THROUGH;
+		};
+
+		struct ExternalConsumedContext {
+			InputContextId               contextId;
+			std::unordered_set<InputKey> keys;
 		};
 
 		/// @brief コンテキストを検索します
@@ -265,6 +278,8 @@ namespace Unnamed {
 		[[nodiscard]] const ContextEntry* FindContext(
 			InputContextId contextId
 		) const;
+
+		std::vector<ExternalConsumedContext> mExternalConsumedKeys;
 
 		std::vector<ContextEntry> mContexts;
 
