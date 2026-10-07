@@ -2,6 +2,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -45,6 +46,9 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// InputSystem
 		//---------------------------------------------------------------------
+
+		/// @brief マウスのデルタ値をリセットします
+		void ResetMouseDelta() const;
 
 		/// @brief マウスカーソルのロックと表示状態をチェックします
 		/// @param hWnd ウィンドウハンドル
@@ -344,6 +348,13 @@ namespace Unnamed {
 			InputContextId     contextId, const InputKey& key,
 			const std::string& command, bool              consumeInput
 		);
+
+		/// @brief 名前から入力コンテキストを検索します。
+		/// @param name 検索するコンテキスト名
+		/// @return 見つかった場合はInputContextId、見つからなかった場合はstd::nullopt
+		[[nodiscard]] std::optional<InputContextId> FindInputContextIdByName(
+			std::string_view name
+		) const;
 
 	private:
 		struct InputContextCommandBinding {

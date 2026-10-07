@@ -1,7 +1,8 @@
+#include <pch.h>
+//-----------------------------------------------------------------------------
 #include <algorithm>
 #include <Dbt.h>
 #include <optional>
-#include <pch.h>
 #include <ranges>
 #include <unordered_set>
 #include <utility>
@@ -321,7 +322,7 @@ namespace Unnamed {
 	}
 
 	void InputSystem::Update(float) {
-		// このフレームのアクションと軸を同じデバイス状態から組み立てる
+		// デバイスの更新
 		for (const auto& inputDevice : mDevices) {
 			inputDevice->Update();
 		}
@@ -385,15 +386,9 @@ namespace Unnamed {
 
 		// 評価
 		mMappingSystem.Evaluate(mSnapshot);
-		
+
 		//マウスのデルタをリセット
-		for (const auto& device : mDevices) {
-			if (device->GetDeviceType() == InputDeviceType::MOUSE) {
-				const auto mouse = std::static_pointer_cast<
-					MouseDevice>(device);
-				mouse->ResetDelta();
-			}
-		}
+		ResetMouseDelta();
 	}
 
 	void InputSystem::Shutdown() {
@@ -492,6 +487,16 @@ namespace Unnamed {
 		}
 
 		return false;
+	}
+
+	void InputSystem::ResetMouseDelta() const {
+		for (const auto& device : mDevices) {
+			if (device->GetDeviceType() == InputDeviceType::MOUSE) {
+				const auto mouse = std::static_pointer_cast<
+					MouseDevice>(device);
+				mouse->ResetDelta();
+			}
+		}
 	}
 
 	void InputSystem::CheckMouseCursorLockAndVisibility(
@@ -964,6 +969,12 @@ namespace Unnamed {
 		mContextCommandBinds.emplace_back(std::move(binding));
 	}
 
+	std::optional<InputContextId> InputSystem::FindInputContextIdByName(
+		const std::string_view name
+	) const {
+		return mMappingSystem.FindContextIdByName(name);
+	}
+
 	bool InputSystem::ResolveMouseCursorLockState() const {
 		return mMouseCursorLockOverride ?
 			       mMouseCursorLockOverrideMode :
@@ -1145,14 +1156,6 @@ namespace Unnamed {
 						break;
 					}
 
-					DevMsg(
-						kChannel,
-						"[D3 TEST] ContextCommand: context={}, key={}, command={}",
-						binding.contextId.value,
-						KeyNameTable::ToString(binding.key),
-						command
-					);
-
 					console->ExecuteCommand(
 						command,
 						EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
@@ -1260,13 +1263,6 @@ namespace Unnamed {
 			if (!releaseCommand.has_value()) {
 				continue;
 			}
-
-			DevMsg(
-				kChannel,
-				"[TEST] Forced Release: key={}, command={}",
-				KeyNameTable::ToString(active.key),
-				*releaseCommand
-			);
 
 			console->ExecuteCommand(
 				*releaseCommand,
