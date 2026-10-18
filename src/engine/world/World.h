@@ -292,8 +292,8 @@ namespace Unnamed {
 
 		GuidGenerator mGuidGenerator; // GUIDジェネレーター
 
-		Path mLoadedScenePath;            // ロードされたシーンのファイルパス
-		Path mPendingSceneTransitionPath; // 保留中のシーン遷移先
+		Path     mLoadedScenePath;            // ロードされたシーンのファイルパス
+		Path     mPendingSceneTransitionPath; // 保留中のシーン遷移先
 		uint64_t mSceneGeneration = 0;
 
 		WorldTime      mTime; // ワールドの時間情報
@@ -301,7 +301,7 @@ namespace Unnamed {
 
 		std::vector<Render::ScreenSpriteInput> mDebugScreenSprites;
 
-		WorldServices mServices;
+		WorldServices    mServices;
 		SceneLoadOptions mSceneLoadOptions = {};
 	};
 }

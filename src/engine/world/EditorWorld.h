@@ -24,8 +24,10 @@ namespace Unnamed {
 			float renderDeltaTime, float interpolationAlpha
 		) override;
 
+		/// @brief Play-In-Editorを開始します。既に開始されている場合は何もしません。
 		void StartPlayInEditor();
 		void StopPlayInEditor();
+
 		/// @brief PIE 用ワールド生成ファクトリを設定します。
 		/// @param factory 設定するワールド生成ファクトリ
 		void SetPlayWorldFactory(IGameWorldFactory* factory) noexcept;
@@ -40,7 +42,7 @@ namespace Unnamed {
 			AssetManager&               assetManager,
 			bool                        enableUiInput = true
 		) override;
-		[[nodiscard]] bool IsGameSimulationEnabled() const noexcept override;
+		[[nodiscard]] bool   IsGameSimulationEnabled() const noexcept override;
 		[[nodiscard]] World* GetSimulationWorld() noexcept override;
 
 		[[nodiscard]] Scene* GetEditableScene() {
@@ -64,21 +66,24 @@ namespace Unnamed {
 		);
 		void SetEditorCameraLookEnabled(bool enabled);
 
-	private:
+	protected:
 		[[nodiscard]] bool BuildUiInputCamera(
 			Render::RenderCameraInput& outCamera
 		) const override;
 
+	private:
 		void UpdateEditorCameraAspectIfNeeded(
 			const Render::SceneViewRenderMode& request
 		);
 
 		std::unique_ptr<Entity>   mEditorEntity;
 		std::unique_ptr<World>    mPlayWorld;
-		IGameWorldFactory*        mPlayWorldFactory = nullptr;
-		Render::SCENE_RENDER_MODE mLastAspectMode   =
+		IGameWorldFactory*        mPlayWorldFactory         = nullptr;
+
+		uint32_t                  mLastAspectViewportWidth  = 0;
+		uint32_t                  mLastAspectViewportHeight = 0;
+
+		Render::SCENE_RENDER_MODE mLastAspectMode           =
 			Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
-		uint32_t mLastAspectViewportWidth  = 0;
-		uint32_t mLastAspectViewportHeight = 0;
 	};
 }

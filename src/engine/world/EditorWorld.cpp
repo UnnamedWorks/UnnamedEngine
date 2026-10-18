@@ -18,9 +18,12 @@ namespace Unnamed {
 	void EditorWorld::Initialize() {
 		World::Initialize();
 
+		// エディタ用カメラエンティティを作成
 		if (!mEditorEntity) {
 			mEditorEntity = std::make_unique<Entity>(
-				"__EditorCameraEntity", mGuidGenerator.Alloc(), true
+				"__EditorCameraEntity",
+				mGuidGenerator.Alloc(),
+				true
 			);
 			auto* transform = mEditorEntity->AddComponent<TransformComponent>();
 			transform->SetPosition(Math::HtoM({0.0f, 256.0f, -256.0f}));
@@ -70,6 +73,7 @@ namespace Unnamed {
 		if (mPlayWorld || !mScene) {
 			return;
 		}
+
 		if (!mPlayWorldFactory) {
 			Warning(kChannel, "PIE world factory is null.");
 			return;
@@ -146,13 +150,19 @@ namespace Unnamed {
 	) {
 		if (mPlayWorld) {
 			mPlayWorld->FillRenderFrameInputs(
-				inputs, frameContext, assetManager, enableUiInput
+				inputs,
+				frameContext,
+				assetManager,
+				enableUiInput
 			);
 			return;
 		}
 
 		World::FillRenderFrameInputs(
-			inputs, frameContext, assetManager, enableUiInput
+			inputs,
+			frameContext,
+			assetManager,
+			enableUiInput
 		);
 
 		Render::RenderViewInput* primarySceneView = nullptr;

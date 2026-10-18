@@ -154,7 +154,7 @@ namespace Unnamed {
 	}
 
 	World::~World() {
-		Shutdown();
+		World::Shutdown();
 	}
 
 	Scene& World::GetScene() {
@@ -193,6 +193,7 @@ namespace Unnamed {
 			entity->SetScene(mScene.get());
 		}
 
+		// SequenceRuntimeの初期化
 		if (!mSequenceRuntime) {
 			mSequenceRuntime = std::make_unique<SequenceRuntime>(this);
 		} else {
@@ -202,11 +203,15 @@ namespace Unnamed {
 
 	void World::Shutdown() {
 		UnloadScene();
+
 		mCameraManager.ClearCurrentCamera();
+
 		mGameplayCueBus.Clear();
+
 		if (mSequenceRuntime) {
 			mSequenceRuntime->Clear();
 		}
+
 		if (mPhysicsEngine) {
 			mPhysicsEngine->ClearStaticMeshes();
 			mPhysicsEngine.reset();
@@ -244,7 +249,7 @@ namespace Unnamed {
 		);
 		Profiler*  profiler      = mServices.profiler;
 		const auto RunPhaseGroup =
-				[&](
+			[&](
 			const TICK_PHASE phase,
 			const TickGroup  group
 		) {
@@ -255,21 +260,21 @@ namespace Unnamed {
 				switch (phase) {
 					case TICK_PHASE::PRE_PHYSICS
 					: invokedComponentCount += entity->PrePhysicsTick(
-							fixedDeltaTime,
-							group
-						);
+						  fixedDeltaTime,
+						  group
+					  );
 						break;
 					case TICK_PHASE::TICK
 					: invokedComponentCount += entity->Tick(
-							fixedDeltaTime,
-							group
-						);
+						  fixedDeltaTime,
+						  group
+					  );
 						break;
 					case TICK_PHASE::POST_PHYSICS
 					: invokedComponentCount += entity->PostPhysicsTick(
-							fixedDeltaTime,
-							group
-						);
+						  fixedDeltaTime,
+						  group
+					  );
 						break;
 				}
 			}
@@ -333,14 +338,14 @@ namespace Unnamed {
 		mTime.renderUnscaledDeltaTime       = std::max(0.0f, renderDeltaTime);
 		ConsoleSystem* console              = mServices.console;
 		const bool     interpolationEnabled =
-				console ?
-					console->GetConVarValueOr("cl_interpolate", true) :
-					true;
+			console ?
+				console->GetConVarValueOr("cl_interpolate", true) :
+				true;
 		// cl_interpolateが無効のときは現在値をそのまま描画します。
 		mTime.interpolationAlpha =
-				interpolationEnabled ?
-					std::clamp(interpolationAlpha, 0.0f, 1.0f) :
-					1.0f;
+			interpolationEnabled ?
+				std::clamp(interpolationAlpha, 0.0f, 1.0f) :
+				1.0f;
 
 		if (!mScene) {
 			if (mPhysicsEngine) {
@@ -383,9 +388,9 @@ namespace Unnamed {
 
 			Vec2 runtimeCanvasSize = canvas->GetPixelSize();
 			if (canvas->GetSpaceMode() == UI_CANVAS_SPACE_MODE::SCREEN &&
-				inputSystem) {
+			    inputSystem) {
 				const Vec2 viewportSize = inputSystem->
-						GetMouseClientViewportSize();
+					GetMouseClientViewportSize();
 				if (viewportSize.x > 0.0f && viewportSize.y > 0.0f) {
 					runtimeCanvasSize = viewportSize;
 				}
@@ -414,7 +419,10 @@ namespace Unnamed {
 			Mat4       worldMat = transform->RenderWorldMat();
 			const Vec3 pos      = worldMat.GetTranslate();
 			GetDebugDraw().DrawAxis(
-				pos, transform->Right(), transform->Up(), transform->Forward()
+				pos,
+				transform->Right(),
+				transform->Up(),
+				transform->Forward()
 			);
 		}
 
@@ -461,7 +469,10 @@ namespace Unnamed {
 		auto newScene = std::make_unique<Scene>();
 		newScene->SetWorld(this);
 		const bool ok = SceneSerializer::LoadFromFile(
-			*newScene, path, mGuidGenerator, options
+			*newScene,
+			path,
+			mGuidGenerator,
+			options
 		);
 		if (!ok) {
 			return false;
@@ -472,7 +483,8 @@ namespace Unnamed {
 		OnSceneLoaded();
 
 		Msg(
-			kChannel, "Scene loaded successfully from file: {}",
+			kChannel,
+			"Scene loaded successfully from file: {}",
 			path
 		);
 
@@ -561,7 +573,7 @@ namespace Unnamed {
 		sceneView.viewKey = "world.main";
 		sceneView.type = Render::RENDER_VIEW_TYPE::SCENE;
 		sceneView.output.sizeMode =
-				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
+			Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
 		sceneView.output.presentToSwapChain = true;
 		sceneView.output.clearSwapChainWhenNotPresenting = false;
 		sceneView.sceneViewMode.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
@@ -613,7 +625,7 @@ namespace Unnamed {
 				const auto* skybox = entity->GetComponent<SkyboxComponent>();
 				if (skybox && skybox->IsActive()) {
 					const AssetID skyboxTextureAssetId =
-							skybox->GetTextureAssetId();
+						skybox->GetTextureAssetId();
 					if (skyboxTextureAssetId != kInvalidAssetID) {
 						sceneView.skybox.enabled = true;
 						sceneView.skybox.textureAssetId = skyboxTextureAssetId;
@@ -670,13 +682,13 @@ namespace Unnamed {
 						meshAssetId
 					);
 					const uint32_t materialIndex =
-							meshAsset && !meshAsset->submeshes.empty() ?
-								meshAsset->submeshes.front().materialIndex :
-								0u;
+						meshAsset && !meshAsset->submeshes.empty() ?
+							meshAsset->submeshes.front().materialIndex :
+							0u;
 					Render::VisibleRenderObject object = {};
 					object.meshAssetId                 = meshAssetId;
 					const auto& materialSlots          = meshRenderer->
-							GetMaterialSlots();
+						GetMaterialSlots();
 					uint32_t maxSlotIndex = 0;
 					for (const auto& slot : materialSlots) {
 						maxSlotIndex = std::max(maxSlotIndex, slot.slotIndex);
@@ -688,17 +700,17 @@ namespace Unnamed {
 						);
 						for (const auto& slot : materialSlots) {
 							object.materialInstanceIdsBySlot[slot.slotIndex] =
-									meshRenderer->
-									GetMaterialInstanceAssetIdForSlot(
-										slot.slotIndex
-									);
+								meshRenderer->
+								GetMaterialInstanceAssetIdForSlot(
+									slot.slotIndex
+								);
 						}
 					}
 					object.materialInstanceId = meshRenderer->
-							ResolveMaterialInstanceAssetForMaterialIndex(
-								assetManager,
-								materialIndex
-							);
+						ResolveMaterialInstanceAssetForMaterialIndex(
+							assetManager,
+							materialIndex
+						);
 					object.ownerEntityGuid = entity->GetGuid();
 					object.world           = transform->RenderWorldMat();
 					object.isSkinned       = false;
@@ -727,9 +739,9 @@ namespace Unnamed {
 					);
 					for (const auto& slot : materialSlots) {
 						object.materialInstanceIdsBySlot[slot.slotIndex] =
-								skelRenderer->GetMaterialInstanceAssetIdForSlot(
-									slot.slotIndex
-								);
+							skelRenderer->GetMaterialInstanceAssetIdForSlot(
+								slot.slotIndex
+							);
 					}
 				}
 
@@ -737,22 +749,22 @@ namespace Unnamed {
 					meshAssetId
 				);
 				const uint32_t materialIndex =
-						meshAsset && !meshAsset->submeshes.empty() ?
-							meshAsset->submeshes.front().materialIndex :
-							0u;
+					meshAsset && !meshAsset->submeshes.empty() ?
+						meshAsset->submeshes.front().materialIndex :
+						0u;
 				object.materialInstanceId = skelRenderer->
-						GetMaterialInstanceAssetIdForMaterialIndex(
-							materialIndex
-						);
+					GetMaterialInstanceAssetIdForMaterialIndex(
+						materialIndex
+					);
 				object.ownerEntityGuid   = entity->GetGuid();
 				object.world             = transform->RenderWorldMat();
 				object.isSkinned         = false;
 				object.skeletonPaletteId = 0;
 
 				const bool hasSkinning =
-						meshAsset && meshAsset->hasSkinning && !meshAsset->
-						skeleton.
-						empty();
+					meshAsset && meshAsset->hasSkinning && !meshAsset->
+					skeleton.
+					empty();
 				if (hasSkinning) {
 					object.isSkinned                     = true;
 					Render::SkinningPaletteInput palette = {};
@@ -768,11 +780,13 @@ namespace Unnamed {
 							SkeletalAnimationComponent>();
 						anim && anim->IsActive()) {
 						anim->BuildSkinningPalette(
-							*meshAsset, palette.boneMatrices
+							*meshAsset,
+							palette.boneMatrices
 						);
 					} else {
 						SkeletalAnimationComponent::BuildBindPosePalette(
-							*meshAsset, palette.boneMatrices
+							*meshAsset,
+							palette.boneMatrices
 						);
 					}
 
@@ -806,7 +820,7 @@ namespace Unnamed {
 				inputSystem
 			) {
 				const Vec2 viewportSize = inputSystem->
-						GetMouseClientViewportSize();
+					GetMouseClientViewportSize();
 				if (viewportSize.x > 0.0f && viewportSize.y > 0.0f) {
 					runtimeCanvasSize = viewportSize;
 				}
@@ -815,12 +829,12 @@ namespace Unnamed {
 			runtimeRoot->UpdateLayout();
 
 			const bool canProcessInput =
-					enableUiInput && entry.canvas->GetReceiveInput() &&
-					inputSystem != nullptr;
+				enableUiInput && entry.canvas->GetReceiveInput() &&
+				inputSystem != nullptr;
 			if (canProcessInput) {
 				const Vec2 mousePos     = inputSystem->GetMouseClientPosition();
 				const Vec2 viewportSize = inputSystem->
-						GetMouseClientViewportSize();
+					GetMouseClientViewportSize();
 				const bool leftDown = inputSystem->IsMouseButtonDown(
 					MOUSE_INPUT_CODE::LEFT_BUTTON
 				);
@@ -832,7 +846,7 @@ namespace Unnamed {
 				);
 
 				if (entry.canvas->GetSpaceMode() ==
-					UI_CANVAS_SPACE_MODE::SCREEN) {
+				    UI_CANVAS_SPACE_MODE::SCREEN) {
 					runtimeRoot->ProcessMouse(
 						mousePos.x,
 						mousePos.y,
@@ -855,7 +869,10 @@ namespace Unnamed {
 					bool processed = false;
 					Ray  ray       = {};
 					if (UiCanvasRuntime::BuildRayFromMouse(
-						inputCamera, mousePos, viewportSize, ray
+						inputCamera,
+						mousePos,
+						viewportSize,
+						ray
 					)) {
 						Vec3 axisRight      = Vec3::right;
 						Vec3 axisUp         = Vec3::up;
@@ -867,7 +884,7 @@ namespace Unnamed {
 							UI_CANVAS_SPACE_MODE::WORLD_BILLBOARD
 						) {
 							const Mat4 cameraWorld = sceneView.camera.view.
-									Inverse();
+								Inverse();
 							axisRight = cameraWorld.GetRight().Normalized();
 							axisUp    = cameraWorld.GetUp().Normalized();
 						} else {
@@ -899,11 +916,11 @@ namespace Unnamed {
 							)
 						) {
 							const Vec2 localPixels =
-									UiCanvasRuntime::WorldToUiPixels(
-										localWorld,
-										entry.canvas->GetWorldSize(),
-										pixelSize
-									);
+								UiCanvasRuntime::WorldToUiPixels(
+									localWorld,
+									entry.canvas->GetWorldSize(),
+									pixelSize
+								);
 							runtimeRoot->ProcessMouse(
 								localPixels.x,
 								localPixels.y,
@@ -932,31 +949,33 @@ namespace Unnamed {
 			const Vec2    worldSize        = entry.canvas->GetWorldSize();
 			const int32_t canvasSort       = entry.canvas->GetSortKey();
 			const bool    worldSpaceCanvas =
-					entry.canvas->GetSpaceMode() !=
-					UI_CANVAS_SPACE_MODE::SCREEN;
+				entry.canvas->GetSpaceMode() !=
+				UI_CANVAS_SPACE_MODE::SCREEN;
 
 			Render::RenderViewInput canvasSpriteView = {};
 			std::string             canvasViewKey;
 			if (worldSpaceCanvas) {
 				canvasViewKey = std::string("ui.canvas.") +
-						std::to_string(entry.entity->GetGuid()) + "." +
-						std::to_string(entry.canvas->GetGuid());
+				                std::to_string(entry.entity->GetGuid()) + "." +
+				                std::to_string(entry.canvas->GetGuid());
 				canvasSpriteView.viewKey = canvasViewKey;
 				canvasSpriteView.type = Render::RENDER_VIEW_TYPE::SPRITE_ONLY;
 				canvasSpriteView.output.sizeMode =
-						Render::RENDER_VIEW_SIZE_MODE::FIXED;
+					Render::RENDER_VIEW_SIZE_MODE::FIXED;
 				canvasSpriteView.output.width = static_cast<uint32_t>(std::max(
-					1.0f, pixelSize.x
+					1.0f,
+					pixelSize.x
 				));
 				canvasSpriteView.output.height = static_cast<uint32_t>(std::max(
-					1.0f, pixelSize.y
+					1.0f,
+					pixelSize.y
 				));
 			}
 
 			for (size_t i = 0; i < drawCommands.size(); ++i) {
 				const auto&   draw = drawCommands[i];
 				const int32_t sort =
-						canvasSort * 10000 + static_cast<int32_t>(i);
+					canvasSort * 10000 + static_cast<int32_t>(i);
 
 				if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::RECT) {
 					if (
@@ -976,9 +995,10 @@ namespace Unnamed {
 
 				if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::IMAGE) {
 					Render::ScreenSpriteInput sprite =
-							UiCanvasRuntime::BuildScreenSprite(
-								draw.image, sort
-							);
+						UiCanvasRuntime::BuildScreenSprite(
+							draw.image,
+							sort
+						);
 
 					if (
 						entry.canvas->GetSpaceMode() ==
@@ -1016,7 +1036,7 @@ namespace Unnamed {
 			) {
 				Render::WorldBillboardInput billboard = {};
 				billboard.texture.source              =
-						Render::SPRITE_TEXTURE_SOURCE::VIEW_OUTPUT;
+					Render::SPRITE_TEXTURE_SOURCE::VIEW_OUTPUT;
 				billboard.texture.viewKey = canvasViewKey;
 				billboard.worldPosition   = center;
 				billboard.sizeWorld       = worldSize;
@@ -1025,13 +1045,13 @@ namespace Unnamed {
 				billboard.sortKey         = canvasSort;
 				billboard.uvFlipY         = false;
 				billboard.depthTest       =
-						entry.canvas->GetBillboardDepthMode() ==
-						UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
+					entry.canvas->GetBillboardDepthMode() ==
+					UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
 				sceneView.worldBillboards.emplace_back(billboard);
 			} else {
 				Render::WorldSpriteInput sprite = {};
 				sprite.texture.source           =
-						Render::SPRITE_TEXTURE_SOURCE::VIEW_OUTPUT;
+					Render::SPRITE_TEXTURE_SOURCE::VIEW_OUTPUT;
 				sprite.texture.viewKey = canvasViewKey;
 				sprite.worldPosition   = center;
 				sprite.worldRight      = transformWorld.GetRight().Normalized();
@@ -1046,7 +1066,7 @@ namespace Unnamed {
 		}
 
 		const auto& frameOverlaySprites =
-				frameContext.GetOverlayData().screenSprites;
+			frameContext.GetOverlayData().screenSprites;
 		if (!frameOverlaySprites.empty()) {
 			sceneView.screenSprites.reserve(
 				sceneView.screenSprites.size() + frameOverlaySprites.size()
@@ -1177,7 +1197,7 @@ namespace Unnamed {
 		     it != mPostFxPassOverrides.end();) {
 			it->second.enabled.reset();
 			if (it->second.scalarParams.empty() && it->second.colorParams.
-				empty()) {
+			    empty()) {
 				it = mPostFxPassOverrides.erase(it);
 			} else {
 				++it;
