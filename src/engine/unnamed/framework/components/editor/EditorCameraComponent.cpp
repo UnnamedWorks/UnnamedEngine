@@ -12,7 +12,6 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
@@ -21,12 +20,33 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdCamComp";
 	static constexpr float            kMoveSpeedPopupDurationSeconds = 1.0f;
 
+	namespace {
+		/// @brief 値を最も近い2のべき乗に丸めます。例えば、300は256に、400は512になります。
+		/// @param value 丸める値
+		/// @return 最も近い2のべき乗に丸められた値
+		float RoundToNearestPowerOfTwo(const float value) {
+			const float lowerPowerOfTwo = std::pow(
+				2.0f,
+				std::floor(std::log2(value))
+			);
+			const float upperPowerOfTwo = std::pow(
+				2.0f,
+				std::ceil(std::log2(value))
+			);
+			if (value - lowerPowerOfTwo < upperPowerOfTwo - value) {
+				return lowerPowerOfTwo;
+			}
+
+			return upperPowerOfTwo;
+		}
+	}
+
 	void EditorCameraComponent::OnAttached() {
-		mInput = ServiceLocator::Get<InputSystem>();
+		mInput = ServiceLocator::Get<InputSystem>(); // TODO: ダメ
 		if (!mInput) {
 			Error(
 				kChannel,
-				"UInputSystemを取得できませんでした。EditorCameraComponentは入力を処理できません。"
+				"InputSystemを取得できませんでした。EditorCameraComponentは入力を処理できません。"
 			);
 		}
 
@@ -56,12 +76,12 @@ namespace Unnamed {
 		}
 	}
 
-	void EditorCameraComponent::OnEditorTick(float deltaTime) {
+	void EditorCameraComponent::OnEditorTick(const float deltaTime) {
 		// まずは入力を処理して、カメラの向きと移動方向を更新します。
 		mMoveInput = Vec3::zero;
 		mWishDir   = Vec3::zero;
 		if (mLookEnabled && mInput->
-			IsHeld("ed_look")) {
+		    IsHeld("ed_look")) {
 			ProcessInput();
 		} else {
 			mInput->SetMouseCursorLocked(false);
@@ -93,7 +113,7 @@ namespace Unnamed {
 
 	void EditorCameraComponent::Deserialize(const JsonReader& reader) {
 		mFovYDegrees =
-				reader.ReadFloatOr("fovYDegrees", mFovYDegrees);
+			reader.ReadFloatOr("fovYDegrees", mFovYDegrees);
 		mNearZ      = reader.ReadFloatOr("nearZ", mNearZ);
 		mFarZ       = reader.ReadFloatOr("farZ", mFarZ);
 		mExposureEv = reader.ReadFloatOr("exposureEv", mExposureEv);
@@ -159,9 +179,9 @@ namespace Unnamed {
 		const Vec3       position = transform->GetPosition();
 		const Quaternion rotation = transform->GetRotation();
 		const Mat4       world    =
-				Mat4::FromQuaternion(rotation) *
-				Mat4::Scale(Vec3::one) *
-				Mat4::Translate(position);
+			Mat4::FromQuaternion(rotation) *
+			Mat4::Scale(Vec3::one) *
+			Mat4::Translate(position);
 
 		outView = world.Inverse();
 		outProj = Mat4::PerspectiveFovD3D(
@@ -200,23 +220,6 @@ namespace Unnamed {
 		return true;
 	}
 
-	/// @brief 値を最も近い2のべき乗に丸めます。例えば、300は256に、400は512になります。
-	/// @param value 丸める値
-	/// @return 最も近い2のべき乗に丸められた値
-	static float RoundToNearestPowerOfTwo(const float value) {
-		const float lowerPowerOfTwo = std::pow(
-			2.0f, std::floor(std::log2(value))
-		);
-		const float upperPowerOfTwo = std::pow(
-			2.0f, std::ceil(std::log2(value))
-		);
-		if (value - lowerPowerOfTwo < upperPowerOfTwo - value) {
-			return lowerPowerOfTwo;
-		}
-
-		return upperPowerOfTwo;
-	}
-
 	void EditorCameraComponent::ProcessInput() {
 		if (!mInput) {
 			return;
@@ -253,10 +256,12 @@ namespace Unnamed {
 		mRotation.x = std::clamp(mRotation.x, -pitchDown, pitchUp);
 
 		const Quaternion pitchRotation = Quaternion::AxisAngle(
-			Vec3::right, mRotation.x * Math::deg2Rad
+			Vec3::right,
+			mRotation.x * Math::deg2Rad
 		);
 		const Quaternion yawRotation = Quaternion::AxisAngle(
-			Vec3::up, mRotation.y * Math::deg2Rad
+			Vec3::up,
+			mRotation.y * Math::deg2Rad
 		);
 
 		const Quaternion rotation = yawRotation * pitchRotation;
@@ -304,8 +309,8 @@ namespace Unnamed {
 		const Mat4       rotMatrix  = Mat4::FromQuaternion(currentRot);
 
 		mWishDir = rotMatrix.GetRight() * mMoveInput.x +
-				rotMatrix.GetUp() * mMoveInput.y +
-				rotMatrix.GetForward() * mMoveInput.z;
+		           rotMatrix.GetUp() * mMoveInput.y +
+		           rotMatrix.GetForward() * mMoveInput.z;
 
 		mWishDir.Normalize();
 	}
