@@ -2,6 +2,7 @@
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <Dbt.h>
+#include <iterator>
 #include <optional>
 #include <ranges>
 #include <unordered_set>
@@ -846,7 +847,11 @@ namespace Unnamed {
 	}
 
 	bool InputSystem::DestroyInputContext(const InputContextId contextId) {
-		return mMappingSystem.DestroyContext(contextId);
+		if (!mMappingSystem.DestroyContext(contextId)) {
+			return false;
+		}
+		ReleaseContextActiveCommands(contextId);
+		return true;
 	}
 
 	bool InputSystem::PushInputContext(const InputContextId contextId) {
@@ -854,7 +859,17 @@ namespace Unnamed {
 	}
 
 	bool InputSystem::PopInputContext(const InputContextId contextId) {
-		return mMappingSystem.PopContext(contextId);
+		if (!mMappingSystem.PopContext(contextId)) {
+			return false;
+		}
+		ReleaseContextActiveCommands(contextId);
+		return true;
+	}
+
+	void InputSystem::Unbind(
+		const InputContextId contextId, const std::string& target
+	) {
+		mMappingSystem.Unbind(contextId, target);
 	}
 
 	bool InputSystem::IsInputContextActive(
@@ -1078,7 +1093,7 @@ namespace Unnamed {
 			for (const auto& command : commands) {
 				console->ExecuteCommand(
 					command,
-					EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+					EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
 				);
 
 				RegisterActiveCommand(std::nullopt, key, command);
@@ -1158,7 +1173,7 @@ namespace Unnamed {
 
 					console->ExecuteCommand(
 						command,
-						EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+						EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
 					);
 
 					RegisterActiveCommand(
@@ -1241,8 +1256,41 @@ namespace Unnamed {
 
 			console.ExecuteCommand(
 				*releaseCommand,
-				EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+				EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
 			);
+		}
+	}
+
+	void InputSystem::ReleaseContextActiveCommands(
+		const InputContextId contextId
+	) {
+		const auto releaseBegin = std::stable_partition(
+			mActiveCommands.begin(),
+			mActiveCommands.end(),
+			[contextId](const ActiveCommand& active) {
+				return active.contextId != contextId;
+			}
+		);
+		const std::vector<ActiveCommand> releasedCommands(
+			std::make_move_iterator(releaseBegin),
+			std::make_move_iterator(mActiveCommands.end())
+		);
+		// コマンド実行による再入より先に管理対象から除外
+		mActiveCommands.erase(releaseBegin, mActiveCommands.end());
+
+		auto* console = ServiceLocator::Get<ConsoleSystem>();
+		if (!console) {
+			return;
+		}
+		for (const auto& active : releasedCommands) {
+			if (const auto command = MakeReleaseCommandFromPress(
+				active.pressCommand
+			)) {
+				console->ExecuteCommand(
+					*command,
+					EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+				);
+			}
 		}
 	}
 
@@ -1266,7 +1314,7 @@ namespace Unnamed {
 
 			console->ExecuteCommand(
 				*releaseCommand,
-				EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+				EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
 			);
 		}
 	}

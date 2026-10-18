@@ -236,9 +236,14 @@ namespace Unnamed {
 		/// @param contextId 追加する入力コンテキストのID
 		bool PushInputContext(InputContextId contextId);
 
-		/// @brief 入力コンテキストをスタックから取り除きます。
+		/// @brief 入力コンテキストをスタックから取り除き、対応する押下コマンドを解放します。
 		/// @param contextId 取り除く入力コンテキストのID
 		bool PopInputContext(InputContextId contextId);
+
+		/// @brief 指定コンテキストからActionまたはAxisのバインドを解除します。
+		/// @param contextId 対象のコンテキストID
+		/// @param target 解除するActionまたはAxis名
+		void Unbind(InputContextId contextId, const std::string& target);
 
 		/// @brief 入力コンテキストが有効かを取得します。
 		/// @param contextId 取得する入力コンテキストのID
@@ -405,6 +410,10 @@ namespace Unnamed {
 		/// @brief 現在Release条件を満たしているActiveCommandを解放します。
 		/// @param console コンソールシステム
 		void ProcessActiveCommandReleases(ConsoleSystem& console);
+
+		/// @brief 指定コンテキストの押下コマンドを管理対象から外し、同期的に解放します。
+		/// @param contextId 解放するコンテキストのID
+		void ReleaseContextActiveCommands(InputContextId contextId);
 
 		/// @brief すべてのアクティブコマンドを強制的に解放します。
 		void ReleaseAllActiveCommands(ConsoleSystem* console);
