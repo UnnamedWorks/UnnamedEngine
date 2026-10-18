@@ -1,10 +1,11 @@
 #include "PlayerCharacterController.h"
 
 #include "../CameraRotatorComponent.h"
+
 #include "../character/base/BaseCharacterComponent.h"
 
 #include "engine/ComponentRegistry.h"
-
+#include "engine/game/IDemoService.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
@@ -12,7 +13,6 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/World.h"
-#include "engine/game/IDemoService.h"
 
 #include "game/core/input/CharacterActionFrameInput.h"
 #include "game/core/replay/ReplayHash.h"
