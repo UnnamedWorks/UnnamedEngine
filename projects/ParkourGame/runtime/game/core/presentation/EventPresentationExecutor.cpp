@@ -445,20 +445,6 @@ namespace Unnamed {
 					break;
 				}
 				case EventPresentationActionType::DebugPrint: {
-					const std::string_view text = !action.debugText.empty() ?
-						                              std::string_view(
-							                              action.debugText) :
-						                              std::string_view(
-							                              action.id);
-					DevMsg(
-						kChannel,
-						"[debug.print] cue='{}' value={:.3f} value2={:.3f} expr={:.3f} message='{}'.",
-						context.cue.id,
-						context.cue.value,
-						context.cue.value2,
-						actionValue,
-						text
-					);
 					ReportAction(actionIndex, ActionTraceStatus::Executed);
 					break;
 				}
