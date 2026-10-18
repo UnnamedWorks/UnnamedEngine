@@ -414,19 +414,19 @@ namespace Unnamed {
 			return;
 		}
 
-		TransformComponent* controlledTransform = nullptr;
+		const TransformComponent* controlledTransform = nullptr;
 		if (Entity* owner = GetOwner()) {
 			controlledTransform = owner->GetComponent<TransformComponent>();
 		}
 
-		if (auto* scene = GetScene()) {
+		if (const auto* scene = GetScene()) {
 			for (const auto& entityPtr : scene->GetEntities()) {
 				if (!entityPtr) {
 					continue;
 				}
 
-				auto* rotator = entityPtr->GetComponent<
-					CameraRotatorComponent>();
+				auto* rotator =
+					entityPtr->GetComponent<CameraRotatorComponent>();
 				if (!rotator) {
 					continue;
 				}
@@ -480,9 +480,12 @@ namespace Unnamed {
 			--mQueuedSprintPressCount;
 		}
 
-		const Vec2 gamepadMoveAxis = mInput->Axis2D("GamepadMove");
-		input.moveAxis.x           += gamepadMoveAxis.x;
-		input.moveAxis.z           += gamepadMoveAxis.y;
+		const Vec2 gamepadMoveAxis = mInput->Axis2D(
+			mGameplayInputContext,
+			"GamepadMove"
+		);
+		input.moveAxis.x += gamepadMoveAxis.x;
+		input.moveAxis.z += gamepadMoveAxis.y;
 
 		if (input.moveAxis.Length() > 1.0f) {
 			input.moveAxis.Normalize();
