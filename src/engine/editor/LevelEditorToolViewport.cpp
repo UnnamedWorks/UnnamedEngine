@@ -40,7 +40,8 @@ namespace Unnamed {
 			const float safePanelHeight = std::max(1.0f, panelSize.y);
 			const float safeContentWidth = std::max(1.0f, contentLogicalSize.x);
 			const float safeContentHeight = std::max(
-				1.0f, contentLogicalSize.y
+				1.0f,
+				contentLogicalSize.y
 			);
 
 			ViewportFitResult result;
@@ -58,7 +59,8 @@ namespace Unnamed {
 			const float fitOffsetX = (safePanelWidth - fitWidth) * 0.5f;
 			const float fitOffsetY = (safePanelHeight - fitHeight) * 0.5f;
 			result.drawPos         = Vec2(
-				panelScreenPos.x + fitOffsetX, panelScreenPos.y + fitOffsetY
+				panelScreenPos.x + fitOffsetX,
+				panelScreenPos.y + fitOffsetY
 			);
 			result.drawSize = Vec2(fitWidth, fitHeight);
 			return result;
@@ -104,7 +106,8 @@ namespace Unnamed {
 			);
 			const ImVec2 fitPos(fit.drawPos.x, fit.drawPos.y);
 			const ImVec2 fitMax(
-				fit.drawPos.x + fit.drawSize.x, fit.drawPos.y + fit.drawSize.y
+				fit.drawPos.x + fit.drawSize.x,
+				fit.drawPos.y + fit.drawSize.y
 			);
 
 			// ImGuizmo のドラッグ入力を奪わないよう、ここはレイアウト確保のみ行う
@@ -199,7 +202,11 @@ namespace Unnamed {
 			false
 		);
 		DrawViewportGizmo(
-			kViewScenePerspective, mode, pos, size.x, size.y
+			kViewScenePerspective,
+			mode,
+			pos,
+			size.x,
+			size.y
 		);
 
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
@@ -432,7 +439,8 @@ namespace Unnamed {
 								next.cameraEntityGuid = 0;
 							}
 							mCameraManager.SetPaneBinding(
-								kViewScenePerspective, next
+								kViewScenePerspective,
+								next
 							);
 							binding = next;
 						}
@@ -468,15 +476,18 @@ namespace Unnamed {
 
 					ImGui::SetNextItemWidth(180.0f);
 					if (ImGui::BeginCombo(
-						"CameraEntity", cameraLabel.c_str()
+						"CameraEntity",
+						cameraLabel.c_str()
 					)) {
 						if (ImGui::Selectable(
-							"<none>", binding.cameraEntityGuid == 0
+							"<none>",
+							binding.cameraEntityGuid == 0
 						)) {
 							ViewportCameraBinding next = binding;
 							next.cameraEntityGuid      = 0;
 							mCameraManager.SetPaneBinding(
-								kViewScenePerspective, next
+								kViewScenePerspective,
+								next
 							);
 							binding = next;
 						}
@@ -503,12 +514,14 @@ namespace Unnamed {
 									entity->GetGuid()
 								);
 								if (ImGui::Selectable(
-									label.c_str(), selected
+									label.c_str(),
+									selected
 								)) {
 									ViewportCameraBinding next = binding;
 									next.cameraEntityGuid = entity->GetGuid();
 									mCameraManager.SetPaneBinding(
-										kViewScenePerspective, next
+										kViewScenePerspective,
+										next
 									);
 									binding = next;
 								}
@@ -535,7 +548,7 @@ namespace Unnamed {
 		const Vec2&                        imagePos,
 		const float                        drawWidth,
 		const float                        drawHeight
-	) {
+	) const {
 		Entity* entity = GetSelectedEntity();
 		if (!entity) {
 			return;
@@ -548,8 +561,7 @@ namespace Unnamed {
 		Mat4 world = transform->GetWorldMat();
 
 		const EditorViewportCameraManager::ResolvedCamera camera =
-			mCameraManager.
-			ResolveViewCamera(
+			EditorViewportCameraManager::ResolveViewCamera(
 				mEditorWorld,
 				viewKey,
 				sceneViewMode,
@@ -565,15 +577,25 @@ namespace Unnamed {
 		static ImGuizmo::OPERATION sOperation = ImGuizmo::TRANSLATE;
 		static ImGuizmo::MODE      sMode      = ImGuizmo::WORLD;
 
-		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-			if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-				sOperation = ImGuizmo::TRANSLATE;
-			}
-			if (ImGui::IsKeyPressed(ImGuiKey_E)) {
-				sOperation = ImGuizmo::ROTATE;
-			}
-			if (ImGui::IsKeyPressed(ImGuiKey_R)) {
-				sOperation = ImGuizmo::SCALE;
+		if (!IsPlaying() && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+			if (mInputSystem) {
+				if (mInputSystem->IsPressed("translate")) {
+					sOperation = ImGuizmo::TRANSLATE;
+				}
+				if (mInputSystem->IsPressed("rotate")) {
+					sOperation = ImGuizmo::ROTATE;
+				}
+				if (mInputSystem->IsPressed("scale")) {
+					sOperation = ImGuizmo::SCALE;
+				}
+				if (mInputSystem->IsPressed("bounds")) {
+					sOperation = ImGuizmo::BOUNDS;
+				}
+				if (mInputSystem->IsPressed("togglegizmo")) {
+					sMode = sMode == ImGuizmo::WORLD ?
+						        ImGuizmo::LOCAL :
+						        ImGuizmo::WORLD;
+				}
 			}
 		}
 
@@ -679,18 +701,23 @@ namespace Unnamed {
 
 		const float alpha = Math::CubicBezier(
 			alphaMultiplier,
-			0.2f, 0.0f, 0.0f, 1.0f
+			0.2f,
+			0.0f,
+			0.0f,
+			1.0f
 		);
 
 		ImGui::SetNextWindowBgAlpha(alpha * 0.9f);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
 		ImGui::PushStyleVar(
-			ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f)
+			ImGuiStyleVar_WindowPadding,
+			ImVec2(8.0f, 8.0f)
 		);
 
 		ImGui::Begin(
-			"##editorCameraMoveSpeedPopup", nullptr,
+			"##editorCameraMoveSpeedPopup",
+			nullptr,
 			ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_NoResize |
 			ImGuiWindowFlags_NoMove |
@@ -722,7 +749,11 @@ namespace Unnamed {
 		}
 
 		const float t = Math::CubicBezier(
-			20.0f * deltaTime, 0.2f, 0.0f, 0.0f, 1.0f
+			20.0f * deltaTime,
+			0.2f,
+			0.0f,
+			0.0f,
+			1.0f
 		);
 
 		currentProgress = std::lerp(currentProgress, progress, t);
@@ -732,7 +763,8 @@ namespace Unnamed {
 		);
 
 		ImGui::ProgressBar(
-			currentProgress, ImVec2(
+			currentProgress,
+			ImVec2(
 				ImGui::GetContentRegionAvail().x,
 				4.0f
 			),

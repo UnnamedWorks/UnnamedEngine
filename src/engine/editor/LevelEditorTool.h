@@ -19,6 +19,7 @@
 #include "engine/Properties.h"
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/Scene.h"
+#include "engine/unnamed/subsystem/input/mapping/InputMappingTypes.h"
 
 namespace Unnamed {
 	class WindowManager;
@@ -84,8 +85,10 @@ namespace Unnamed {
 		/// @brief PresentModeに応じた入力ビューポート状態を同期します。
 		void               SyncPresentationState();
 		[[nodiscard]] bool IsPlaying() const;
-		void               StartPlayInEditor() const;
-		void               StopPlayInEditor() const;
+		/// @brief 編集入力を停止し、PIEの開始に成功した場合はゲーム入力を有効にします。
+		void               StartPlayInEditor();
+		/// @brief ゲーム入力を解除してPIEを終了し、編集入力を再開します。
+		void               StopPlayInEditor();
 		[[nodiscard]] bool IsProfilerWindowOpen() const;
 		void               SetProfilerWindowOpen(bool open);
 
@@ -93,6 +96,11 @@ namespace Unnamed {
 			"tool.level.scene.perspective";
 
 	private:
+		/// @brief 現在の入力を解放し、指定したコンテキストへ切り替えます。
+		/// @param contextId 有効にするID。無効なIDの場合は入力を停止します。
+		/// @return 切り替えに成功した場合はtrueを返します。
+		bool SwitchInputContext(InputContextId contextId);
+
 		/// @brief ViewOutputCacheは、view textureのSRV、revision、texture ID、表示寸法とUV範囲を再利用用に保持します
 		struct ViewOutputCache {
 			D3D12_CPU_DESCRIPTOR_HANDLE srvCpu      = {};
@@ -123,7 +131,7 @@ namespace Unnamed {
 			const Vec2&                        imagePos,
 			float                              drawWidth,
 			float                              drawHeight
-		);
+		) const;
 		void DrawViewportOverlay(float deltaTime) const;
 
 		void DrawSceneOutliner();
@@ -149,6 +157,9 @@ namespace Unnamed {
 		ImGuiLayer&                  mImGuiLayer;
 		ConsoleSystem*               mConsoleSystem = nullptr;
 		InputSystem*                 mInputSystem   = nullptr;
+		InputContextId mEditorInputContext   = {};
+		InputContextId mGameplayInputContext = {};
+		InputContextId mActiveInputContext   = {};
 
 		EntityId mSelectedEntityId = 0;
 		bool     mOpen             = true;

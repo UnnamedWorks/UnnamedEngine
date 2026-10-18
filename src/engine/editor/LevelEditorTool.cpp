@@ -121,6 +121,18 @@ namespace Unnamed {
 		mEditorWorld.SetPlayWorldFactory(services.gameWorldFactory);
 		mConsoleSystem = services.console;
 		mInputSystem   = services.inputSystem;
+		if (!mInputSystem) {
+			Error("LevelEditorTool", "InputSystem is unavailable.");
+			return;
+		}
+		const auto editorContext = mInputSystem->FindInputContextIdByName("editor");
+		const auto gameContext = mInputSystem->FindInputContextIdByName("game");
+		if (!editorContext || !gameContext) {
+			Error("LevelEditorTool", "Editor or gameplay input context is missing.");
+			return;
+		}
+		mEditorInputContext = *editorContext;
+		mGameplayInputContext = *gameContext;
 		mEditorWorld.Initialize();
 		mSequenceEditorController =
 			std::make_unique<SequenceEditorController>();
@@ -151,12 +163,15 @@ namespace Unnamed {
 		}
 
 		mInitialized = true;
+		SwitchInputContext(mEditorInputContext);
 	}
 
 	void LevelEditorTool::Shutdown() {
 		if (!mInitialized) {
 			return;
 		}
+		SwitchInputContext({});
+		mEditorWorld.StopPlayInEditor();
 		if (mSequenceEditorController) {
 			mSequenceEditorController->Shutdown();
 		}
@@ -164,6 +179,8 @@ namespace Unnamed {
 		mEditorWorld.Shutdown();
 		mConsoleSystem = nullptr;
 		mInputSystem   = nullptr;
+		mEditorInputContext = {};
+		mGameplayInputContext = {};
 		mViewOutputs.clear();
 		mDockInitialized = false;
 		mInitialized     = false;
@@ -543,12 +560,29 @@ namespace Unnamed {
 		return mEditorWorld.IsPlaying();
 	}
 
-	void LevelEditorTool::StartPlayInEditor() const {
+	void LevelEditorTool::StartPlayInEditor() {
+		if (!mInitialized || IsPlaying()) {
+			return;
+		}
+		SwitchInputContext({});
 		mEditorWorld.StartPlayInEditor();
+		if (!IsPlaying()) {
+			SwitchInputContext(mEditorInputContext);
+			return;
+		}
+		if (!SwitchInputContext(mGameplayInputContext)) {
+			mEditorWorld.StopPlayInEditor();
+			SwitchInputContext(mEditorInputContext);
+		}
 	}
 
-	void LevelEditorTool::StopPlayInEditor() const {
+	void LevelEditorTool::StopPlayInEditor() {
+		if (!mInitialized || !IsPlaying()) {
+			return;
+		}
+		SwitchInputContext({});
 		mEditorWorld.StopPlayInEditor();
+		SwitchInputContext(mEditorInputContext);
 	}
 
 	bool LevelEditorTool::IsProfilerWindowOpen() const {
@@ -557,6 +591,32 @@ namespace Unnamed {
 
 	void LevelEditorTool::SetProfilerWindowOpen(const bool open) {
 		mShowProfilerWindow = open;
+	}
+
+	bool LevelEditorTool::SwitchInputContext(const InputContextId contextId) {
+		if (!mInputSystem) {
+			return false;
+		}
+		if (mActiveInputContext == contextId) {
+			return true;
+		}
+
+		const InputContextId previousContext = mActiveInputContext;
+		mActiveInputContext = {};
+		if (previousContext.IsValid()) {
+			mInputSystem->PopInputContext(previousContext);
+		}
+		if (!contextId.IsValid()) {
+			return true;
+		}
+		if (!mInputSystem->PushInputContext(contextId)) {
+			Error(
+				"LevelEditorTool", "Failed to activate input context {}.", contextId.value
+			);
+			return false;
+		}
+		mActiveInputContext = contextId;
+		return true;
 	}
 
 	Render::SceneViewRenderMode LevelEditorTool::BuildSceneViewModeForSize(
@@ -675,7 +735,7 @@ namespace Unnamed {
 
 		// 再生中はプレイワールドを停止し、編集ワールドへロード
 		if (mEditorWorld.IsPlaying()) {
-			mEditorWorld.StopPlayInEditor();
+			StopPlayInEditor();
 		}
 
 		if (!mEditorWorld.LoadSceneFromFile(path)) {
