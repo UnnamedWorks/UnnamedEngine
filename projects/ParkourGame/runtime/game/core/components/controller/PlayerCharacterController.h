@@ -54,7 +54,7 @@ namespace Unnamed {
 		MovementFrameInput        mDebugMoveFrameInput   = {};
 		CharacterActionFrameInput mDebugActionFrameInput = {};
 		
-		InputContextId            mInputContext;
+		InputContextId            mGameplayInputContext = {};
 		
 		uint64_t                  mFixedTickCounter                 = 0;
 		uint64_t                  mObservedPlaybackSessionSerial    = 0;

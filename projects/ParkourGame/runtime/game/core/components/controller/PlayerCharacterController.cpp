@@ -19,24 +19,6 @@
 
 namespace Unnamed {
 	namespace {
-		void BindGamepadMoveAxisOnce(InputSystem* input) {
-			static bool sBound = false;
-			if (sBound || !input) {
-				return;
-			}
-
-			constexpr InputKey gamepadMoveX = InputKey::Gamepad(
-				GAMEPAD_INPUT_CODE::LX
-			);
-			constexpr InputKey gamepadMoveY = InputKey::Gamepad(
-				GAMEPAD_INPUT_CODE::LY
-			);
-
-			input->BindAxis2D("GamepadMove", gamepadMoveX, INPUT_AXIS::X, 1.0f);
-			input->BindAxis2D("GamepadMove", gamepadMoveY, INPUT_AXIS::Y, 1.0f);
-			sBound = true;
-		}
-
 		template <typename Fn>
 		void ForEachActionInputReceiver(Entity* owner, Fn&& fn) {
 			if (!owner) {
@@ -59,8 +41,9 @@ namespace Unnamed {
 		BaseCharacterController::OnAttached();
 
 		if (auto* inputSystem = GetInputSystem()) {
-			mInput = inputSystem;
-			BindGamepadMoveAxisOnce(mInput);
+			mInput                = inputSystem;
+			mGameplayInputContext = mInput->FindInputContextIdByName("game").
+			                                value_or(InputContextId{});
 		} else {
 			Error(
 				GetComponentName(),
@@ -89,13 +72,6 @@ namespace Unnamed {
 		mWasPlaybackMode                  = false;
 		mObservedPlaybackSessionSerial    = 0;
 		mObservedRecordingSessionSerial   = 0;
-
-		mInputContext = mInput->CreateInputContext(
-			"Game",
-			INPUT_CONTEXT_MODE::PASS_THROUGH
-		);
-
-		mInput->PushInputContext(mInputContext);
 	}
 
 	void PlayerCharacterController::OnDetached() {
@@ -104,6 +80,7 @@ namespace Unnamed {
 			mCameraRotator = nullptr;
 		}
 		mInput                            = nullptr;
+		mGameplayInputContext             = {};
 		mQueuedSprintPressCount           = 0;
 		mQueuedPrimaryPressedCount        = 0;
 		mQueuedPrimaryReleasedCount       = 0;
