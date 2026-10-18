@@ -83,7 +83,7 @@ namespace Unnamed::Render {
 	) {
 		Profiler*      profiler         = ServiceLocator::Get<Profiler>();
 		auto&          rhi              = renderDevice.GetRhiDevice();
-		auto&          dx               = static_cast<Rhi::D3D12Device&>(rhi);
+		auto&          dx               = dynamic_cast<Rhi::D3D12Device&>(rhi);
 		const auto&    swapChain        = rhi.GetSwapChain();
 		const uint32_t backBufferWidth  = swapChain.GetWidth();
 		const uint32_t backBufferHeight = swapChain.GetHeight();
@@ -93,7 +93,9 @@ namespace Unnamed::Render {
 		bool                        materialsDirty = false;
 		bool                        postFxDirty    = false;
 		renderDevice.ConsumeDirtyAssets(
-			dirtyMeshAssets, materialsDirty, postFxDirty
+			dirtyMeshAssets,
+			materialsDirty,
+			postFxDirty
 		);
 		if (!dirtyMeshAssets.empty()) {
 			// ホットリロード後に古い GPU メッシュ状態を次フレームへ持ち越さない
@@ -107,14 +109,16 @@ namespace Unnamed::Render {
 		}
 		if (postFxDirty) {
 			(void)RebuildPipelineCatalog(
-				renderDevice, dx, mStartupOptions
+				renderDevice,
+				dx,
+				mStartupOptions
 			);
 		}
 
 		// ワールドが提出した描画入力を、このフレームで実行するビュー一覧として確定する
-		mFrameViews                 = inputs.views;
-		mFrameDebugLines            = inputs.debugDraw.lines;
-		mFrameUiSampledTextureIds   = inputs.uiSampledTextureIds;
+		mFrameViews               = inputs.views;
+		mFrameDebugLines          = inputs.debugDraw.lines;
+		mFrameUiSampledTextureIds = inputs.uiSampledTextureIds;
 		if (mFrameViews.empty()) {
 			RenderViewInput fallback = {};
 			fallback.viewKey = "default.main";
@@ -140,31 +144,6 @@ namespace Unnamed::Render {
 			inputs.frameIndex - mLastTextureCacheStatsLogFrame >=
 			kTextureCacheStatsLogIntervalFrames
 		) {
-			const TextureResourceCacheDebugStats cacheStats =
-				mTextureResourceCache.GetDebugStats();
-			const RgRegistryDebugStats registryStats =
-				renderDevice.GetRegistry().GetDebugStats();
-			DevMsg(
-				kRenderChannel,
-				"TextureCacheStats frame={} live={}, sprite={}, skybox={}, material={}, created={}, ttlReleased={}, versionRecreated={}, releaseAllReleased={}, failedResolve={}, frameTtlReleased={}, registryLiveTex={}, registryRetiredTex={}, registrySrvUavSlots={}, registryRtvSlots={}, registryDsvSlots={}, registryCpuSrvUavSlots={}",
-				inputs.frameIndex,
-				cacheStats.liveEntryCount,
-				cacheStats.spriteEntryCount,
-				cacheStats.skyboxEntryCount,
-				cacheStats.materialEntryCount,
-				cacheStats.createdTextureCount,
-				cacheStats.ttlReleaseCount,
-				cacheStats.versionRecreateCount,
-				cacheStats.releaseAllReleaseCount,
-				cacheStats.failedResolveCount,
-				cacheStats.lastFrameReleasedByTtl,
-				registryStats.activeTextureCount,
-				registryStats.retiredResourceCount,
-				registryStats.srvUavActiveSlots,
-				registryStats.rtvActiveSlots,
-				registryStats.dsvActiveSlots,
-				registryStats.cpuSrvUavActiveSlots
-			);
 			mLastTextureCacheStatsLogFrame = inputs.frameIndex;
 		}
 
@@ -216,10 +195,12 @@ namespace Unnamed::Render {
 		view.srvRevision = registry.GetSrvRevision(view.textureId);
 		view.uvMin = Vec2(0.0f, 0.0f);
 		const float safeAllocatedWidth = static_cast<float>(std::max(
-			1u, it->second.allocatedWidth
+			1u,
+			it->second.allocatedWidth
 		));
 		const float safeAllocatedHeight = static_cast<float>(std::max(
-			1u, it->second.allocatedHeight
+			1u,
+			it->second.allocatedHeight
 		));
 		view.uvMax = Vec2(
 			std::clamp(
@@ -265,7 +246,9 @@ namespace Unnamed::Render {
 
 			if (view.type == RENDER_VIEW_TYPE::SCENE) {
 				const auto [sceneWidth, sceneHeight] = ResolveSceneRenderExtent(
-					backBufferWidth, backBufferHeight, view.sceneViewMode
+					backBufferWidth,
+					backBufferHeight,
+					view.sceneViewMode
 				);
 				view.output.width  = sceneWidth;
 				view.output.height = sceneHeight;
@@ -279,21 +262,30 @@ namespace Unnamed::Render {
 				view.output.height = std::max(1u, view.output.height);
 			}
 
-			std::ranges::sort(view.worldBillboards, [](
-			                  const WorldBillboardInput& a, const WorldBillboardInput& b
-		                  ) {
-				                  return a.sortKey < b.sortKey;
-			                  });
-			std::ranges::sort(view.worldSprites, [](
-			                  const WorldSpriteInput& a, const WorldSpriteInput& b
-		                  ) {
-				                  return a.sortKey < b.sortKey;
-			                  });
-			std::ranges::sort(view.screenSprites, [](
-			                  const ScreenSpriteInput& a, const ScreenSpriteInput& b
-		                  ) {
-				                  return a.sortKey < b.sortKey;
-			                  });
+			std::ranges::sort(
+				view.worldBillboards,
+				[](
+				const WorldBillboardInput& a, const WorldBillboardInput& b
+			) {
+					return a.sortKey < b.sortKey;
+				}
+			);
+			std::ranges::sort(
+				view.worldSprites,
+				[](
+				const WorldSpriteInput& a, const WorldSpriteInput& b
+			) {
+					return a.sortKey < b.sortKey;
+				}
+			);
+			std::ranges::sort(
+				view.screenSprites,
+				[](
+				const ScreenSpriteInput& a, const ScreenSpriteInput& b
+			) {
+					return a.sortKey < b.sortKey;
+				}
+			);
 
 			if (mPresentViewKey.empty() && view.output.presentToSwapChain) {
 				mPresentViewKey = view.viewKey;
@@ -309,18 +301,29 @@ namespace Unnamed::Render {
 				!view.output.presentToSwapChain &&
 				view.sceneViewMode.preferRealtimeResize &&
 				view.sceneViewMode.mode == SCENE_RENDER_MODE::FIT_VIEWPORT;
-			const uint32_t allocationHintWidth = allowGrowOnlyReuse ?
-				                                     std::max(
-					                                     logicalWidth,
-					                                     std::max(1u, view.sceneViewMode.allocationHintWidth)
-				                                     ) :
-				                                     logicalWidth;
-			const uint32_t allocationHintHeight = allowGrowOnlyReuse ?
-				                                      std::max(
-					                                      logicalHeight,
-					                                      std::max(1u, view.sceneViewMode.allocationHintHeight)
-				                                      ) :
-				                                      logicalHeight;
+			const uint32_t allocationHintWidth =
+				allowGrowOnlyReuse ?
+					std::max(
+						{
+							logicalWidth,
+							1u,
+							view.sceneViewMode.
+							     allocationHintWidth
+						}
+					) :
+					logicalWidth;
+
+			const uint32_t allocationHintHeight =
+				!allowGrowOnlyReuse ?
+					logicalHeight :
+					std::max(
+						{
+							logicalHeight,
+							1u,
+							view.sceneViewMode
+							    .allocationHintHeight
+						}
+					);
 
 			uint32_t desiredAllocatedWidth  = logicalWidth;
 			uint32_t desiredAllocatedHeight = logicalHeight;
@@ -331,10 +334,16 @@ namespace Unnamed::Render {
 					state.allocatedHeight <= 1;
 				desiredAllocatedWidth = firstAllocation ?
 					                        allocationHintWidth :
-					                        std::max(state.allocatedWidth, logicalWidth);
+					                        std::max(
+						                        state.allocatedWidth,
+						                        logicalWidth
+					                        );
 				desiredAllocatedHeight = firstAllocation ?
 					                         allocationHintHeight :
-					                         std::max(state.allocatedHeight, logicalHeight);
+					                         std::max(
+						                         state.allocatedHeight,
+						                         logicalHeight
+					                         );
 			}
 
 			const bool sizeChanged =
@@ -379,7 +388,8 @@ namespace Unnamed::Render {
 				if (sprite.texture.source == SPRITE_TEXTURE_SOURCE::ASSET) {
 					requiresSpriteTextures = true;
 					(void)EnsureSpriteTextureLoaded(
-						renderDevice, sprite.texture.textureAssetId
+						renderDevice,
+						sprite.texture.textureAssetId
 					);
 				}
 			}
@@ -387,7 +397,8 @@ namespace Unnamed::Render {
 				if (sprite.texture.source == SPRITE_TEXTURE_SOURCE::ASSET) {
 					requiresSpriteTextures = true;
 					(void)EnsureSpriteTextureLoaded(
-						renderDevice, sprite.texture.textureAssetId
+						renderDevice,
+						sprite.texture.textureAssetId
 					);
 				}
 			}
@@ -395,7 +406,8 @@ namespace Unnamed::Render {
 				if (sprite.texture.source == SPRITE_TEXTURE_SOURCE::ASSET) {
 					requiresSpriteTextures = true;
 					(void)EnsureSpriteTextureLoaded(
-						renderDevice, sprite.texture.textureAssetId
+						renderDevice,
+						sprite.texture.textureAssetId
 					);
 				}
 			}
@@ -405,7 +417,8 @@ namespace Unnamed::Render {
 				view.skybox.textureAssetId != kInvalidAssetID
 			) {
 				(void)EnsureSkyboxTextureLoaded(
-					renderDevice, view.skybox.textureAssetId
+					renderDevice,
+					view.skybox.textureAssetId
 				);
 			}
 			if (view.type != RENDER_VIEW_TYPE::SCENE) {
@@ -414,7 +427,9 @@ namespace Unnamed::Render {
 			for (const auto& object : view.visibleObjects) {
 				if (object.meshAssetId != kInvalidAssetID) {
 					(void)EnsureMeshResourceLoaded(
-						renderDevice, dx, object.meshAssetId
+						renderDevice,
+						dx,
+						object.meshAssetId
 					);
 				}
 			}
@@ -468,14 +483,24 @@ namespace Unnamed::Render {
 		if (mDefaultMaterialTextures.baseColorTextureId == 0) {
 			mDefaultMaterialTextures.baseColorTextureId =
 				CreateSolidColorTexture(
-					renderDevice, 255, 255, 255, 255, true,
+					renderDevice,
+					255,
+					255,
+					255,
+					255,
+					true,
 					"MaterialDefaultBaseColorWhite"
 				);
 		}
 		if (mDefaultMaterialTextures.normalTextureId == 0) {
 			mDefaultMaterialTextures.normalTextureId =
 				CreateSolidColorTexture(
-					renderDevice, 128, 128, 255, 255, false,
+					renderDevice,
+					128,
+					128,
+					255,
+					255,
+					false,
 					"MaterialDefaultNormalFlat"
 				);
 		}
@@ -483,21 +508,31 @@ namespace Unnamed::Render {
 			// ORM convention: R=AO, G=Perceptual Roughness, B=Metallic.
 			mDefaultMaterialTextures.ormTextureId =
 				CreateSolidColorTexture(
-					renderDevice, 255, 255, 255, 255, false,
+					renderDevice,
+					255,
+					255,
+					255,
+					255,
+					false,
 					"MaterialDefaultOrm"
 				);
 		}
 		if (mDefaultMaterialTextures.emissiveTextureId == 0) {
 			mDefaultMaterialTextures.emissiveTextureId =
 				CreateSolidColorTexture(
-					renderDevice, 255, 255, 255, 255, true,
+					renderDevice,
+					255,
+					255,
+					255,
+					255,
+					true,
 					"MaterialDefaultEmissiveWhite"
 				);
 		}
 	}
 
 	void Renderer::ReleaseDefaultMaterialTextures(RenderDevice& renderDevice) {
-		auto releaseTexture = [&](uint32_t& textureId) {
+		auto ReleaseTexture = [&](uint32_t& textureId) {
 			if (textureId == 0) {
 				return;
 			}
@@ -505,10 +540,10 @@ namespace Unnamed::Render {
 			textureId = 0;
 		};
 
-		releaseTexture(mDefaultMaterialTextures.baseColorTextureId);
-		releaseTexture(mDefaultMaterialTextures.normalTextureId);
-		releaseTexture(mDefaultMaterialTextures.ormTextureId);
-		releaseTexture(mDefaultMaterialTextures.emissiveTextureId);
+		ReleaseTexture(mDefaultMaterialTextures.baseColorTextureId);
+		ReleaseTexture(mDefaultMaterialTextures.normalTextureId);
+		ReleaseTexture(mDefaultMaterialTextures.ormTextureId);
+		ReleaseTexture(mDefaultMaterialTextures.emissiveTextureId);
 	}
 
 	void Renderer::EnsureMaterialTextureTable(
@@ -565,7 +600,8 @@ namespace Unnamed::Render {
 		RenderDevice& renderDevice, const PIPELINE_RESOLVE_SCOPE scope
 	) {
 		const PipelineResolveResult result = mPipelineRegistry.ResolveAll(
-			renderDevice, scope
+			renderDevice,
+			scope
 		);
 
 		mFullscreenPass.resolved = mPipelineRegistry.GetGraphics(
@@ -672,7 +708,8 @@ namespace Unnamed::Render {
 			return mSpriteFallbackTextureId;
 		}
 		return EnsureSpriteTextureLoaded(
-			renderDevice, textureRef.textureAssetId
+			renderDevice,
+			textureRef.textureAssetId
 		);
 	}
 
@@ -825,7 +862,9 @@ namespace Unnamed::Render {
 		mDeferredViewTextureReleases.emplace_back(std::move(state));
 	}
 
-	void Renderer::ReleaseDeferredViewRuntimeTextures(RenderDevice& renderDevice) {
+	void Renderer::ReleaseDeferredViewRuntimeTextures(
+		RenderDevice& renderDevice
+	) {
 		for (ViewRuntimeState& state : mDeferredViewTextureReleases) {
 			ReleaseViewRuntimeTextures(renderDevice, state);
 		}
