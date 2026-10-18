@@ -8,6 +8,7 @@
 #include "engine/scene/Scene.h"
 
 #include "engine/ComponentRegistry.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "game/core/replay/DemoManager.h"
 #include "game/parkour/runtime/ParkourGameWorld.h"
 
@@ -16,6 +17,30 @@ namespace Unnamed {
 		constexpr std::string_view kChannel = "ParkourGameModule";
 		constexpr std::string_view kParkourProjectContentRoot =
 			"./projects/ParkourGame/content";
+
+		/// @brief ゲーム実行用の入力軸を設定します。
+		void ConfigureGameplayInput(const WorldServices& services) {
+			if (!services.inputSystem) {
+				return;
+			}
+			auto& input = *services.inputSystem;
+			const auto contextId = input.FindInputContextIdByName("game");
+			if (!contextId) {
+				Warning(kChannel, "Gameplay input context is missing.");
+				return;
+			}
+
+			// PIEの再生成でも同じ軸バインドを重複させない
+			input.Unbind(*contextId, "GamepadMove");
+			input.BindAxis2D(
+				*contextId, "GamepadMove", InputKey::Gamepad(GAMEPAD_INPUT_CODE::LX),
+				INPUT_AXIS::X, 1.0f
+			);
+			input.BindAxis2D(
+				*contextId, "GamepadMove", InputKey::Gamepad(GAMEPAD_INPUT_CODE::LY),
+				INPUT_AXIS::Y, 1.0f
+			);
+		}
 	}
 
 	std::string ParkourGameModule::GetName() const {
@@ -61,6 +86,7 @@ namespace Unnamed {
 	std::unique_ptr<World> ParkourGameModule::CreateRuntimeWorld(
 		const WorldServices& services
 	) {
+		ConfigureGameplayInput(services);
 		auto world = std::make_unique<ParkourGameWorld>();
 		world->SetServices(services);
 		return world;
@@ -69,6 +95,7 @@ namespace Unnamed {
 	std::unique_ptr<World> ParkourGameModule::CreatePlayWorld(
 		const WorldServices& services
 	) {
+		ConfigureGameplayInput(services);
 		auto world = std::make_unique<ParkourGameWorld>();
 		world->SetServices(services);
 		return world;
