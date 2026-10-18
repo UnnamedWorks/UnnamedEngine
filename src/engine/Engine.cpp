@@ -158,11 +158,11 @@ namespace Unnamed {
 
 			if (gamePaths.gameRoot.IsAbsolute()) {
 				const Path normalizedGameRoot =
-						gamePaths.gameRoot.LexicallyNormal();
+					gamePaths.gameRoot.LexicallyNormal();
 				const Path repoLikeCoreRoot =
-						(normalizedGameRoot.ParentPath().ParentPath() /
-							Path("content/core"))
-						.LexicallyNormal();
+					(normalizedGameRoot.ParentPath().ParentPath() /
+					 Path("content/core"))
+					.LexicallyNormal();
 				if (repoLikeCoreRoot.IsDirectory()) {
 					return repoLikeCoreRoot;
 				}
@@ -170,20 +170,20 @@ namespace Unnamed {
 
 			if (gamePaths.contentRoot.IsAbsolute()) {
 				const Path normalizedContentRoot =
-						gamePaths.contentRoot.LexicallyNormal();
+					gamePaths.contentRoot.LexicallyNormal();
 				const Path repoLikeCoreRootFromContent =
-						(normalizedContentRoot.ParentPath().ParentPath().
-						                       ParentPath() / Path(
-							"content/core"
-						))
-						.LexicallyNormal();
+					(normalizedContentRoot.ParentPath().ParentPath().
+					                       ParentPath() / Path(
+						 "content/core"
+					 ))
+					.LexicallyNormal();
 				if (repoLikeCoreRootFromContent.IsDirectory()) {
 					return repoLikeCoreRootFromContent;
 				}
 
 				const Path mergedContentCoreRoot =
-						(normalizedContentRoot / Path("core")).
-						LexicallyNormal();
+					(normalizedContentRoot / Path("core")).
+					LexicallyNormal();
 				if (mergedContentCoreRoot.IsDirectory()) {
 					return mergedContentCoreRoot;
 				}
@@ -362,7 +362,7 @@ namespace Unnamed {
 		}
 
 		const GameRuntimeContext& runtimeContext = *mRuntimeBindings.
-				runtimeContext;
+			runtimeContext;
 		// アセット管理より先にコンテンツの解決先を確立する
 		if (!InitializeContentMounts(runtimeContext)) {
 			return false;
@@ -627,9 +627,9 @@ namespace Unnamed {
 		} else {
 			// シーン読込前にワールドを有効化し、必要なサービスを注入する
 			std::unique_ptr<World> runtimeWorld =
-					mRuntimeBindings.gameWorldFactory->CreateRuntimeWorld(
-						BuildWorldServices()
-					);
+				mRuntimeBindings.gameWorldFactory->CreateRuntimeWorld(
+					BuildWorldServices()
+				);
 			if (!runtimeWorld) {
 				Error(
 					"Engine",
@@ -647,6 +647,15 @@ namespace Unnamed {
 			) {
 				return false;
 			}
+
+			const auto contextId = mInputSystem->FindInputContextIdByName(
+				"game"
+			);
+			if (!contextId || !mInputSystem->PushInputContext(*contextId)) {
+				Error("Engine", "Failed to activate gameplay input context.");
+				return false;
+			}
+			mGameplayInputContext = *contextId;
 		}
 
 		if (
@@ -695,10 +704,10 @@ namespace Unnamed {
 		{
 			mAssetHotReloadPollAccumulator    += unscaledDeltaTime;
 			const float hotreloadpollinterval = mConsoleSystem->
-					GetConVarValueOr(
-						"asset_hotreloadpollinterval",
-						0.25f
-					);
+				GetConVarValueOr(
+					"asset_hotreloadpollinterval",
+					0.25f
+				);
 
 			if (
 				mAssetManager &&
@@ -789,17 +798,17 @@ namespace Unnamed {
 				                          GetSimulationTickRate() :
 				                          IDemoService::ResolveConfiguredTickRate();
 			const float fixedStepSeconds =
-					IDemoService::TickStepSecondsFromRate(
-						tickRate
-					);
+				IDemoService::TickStepSecondsFromRate(
+					tickRate
+				);
 
 			if (mDemoService &&
-				(mDemoService->IsPlayback() || mDemoService->IsRecording())) {
+			    (mDemoService->IsPlayback() || mDemoService->IsRecording())) {
 				const uint32_t configuredTickRate =
-						IDemoService::ResolveConfiguredTickRate();
+					IDemoService::ResolveConfiguredTickRate();
 				if (configuredTickRate != tickRate &&
-					configuredTickRate !=
-					mLastLoggedTickRateMismatchConfigured) {
+				    configuredTickRate !=
+				    mLastLoggedTickRateMismatchConfigured) {
 					Warning(
 						"Engine",
 						"sv_tickrate={} is ignored while demo mode is active. Using tickrate={}.",
@@ -846,13 +855,13 @@ namespace Unnamed {
 			if (!sceneWarmupFrame) {
 				// 固定更新の残り時間で描画用の補間位置を決める
 				const float interpolationAlpha =
-						fixedStepSeconds > 0.0f ?
-							std::clamp(
-								mSimulationAccumulator / fixedStepSeconds,
-								0.0f,
-								1.0f
-							) :
-							0.0f;
+					fixedStepSeconds > 0.0f ?
+						std::clamp(
+							mSimulationAccumulator / fixedStepSeconds,
+							0.0f,
+							1.0f
+						) :
+						0.0f;
 				Profiler::ScopeTimer scope(mProfiler.get(), "World.RenderTick");
 				runtimeWorld->RenderTick(scaledDeltaTime, interpolationAlpha);
 			}
@@ -862,7 +871,7 @@ namespace Unnamed {
 		// フレームインデックスとゲーム時間を設定
 		inputs.frameIndex                = mFrameIndex++;
 		inputs.time                      =
-				static_cast<float>(mTimeSystem->GetGameTime()->TotalTime());
+			static_cast<float>(mTimeSystem->GetGameTime()->TotalTime());
 		if (runtimeWorld && mRenderFrameContext) {
 			Profiler::ScopeTimer scope(
 				mProfiler.get(),
@@ -898,7 +907,7 @@ namespace Unnamed {
 			// EndFrame 後は ImGui draw data が確定するため、実際に参照する SRV を
 			// RenderGraph の ImGui pass へ渡せるようにフレーム入力へ回収する。
 			inputs.uiSampledTextureIds = mImGuiLayer->
-					ConsumeSampledTextureIds();
+				ConsumeSampledTextureIds();
 		}
 		if (mEditorRuntime && mIsEditorMode) {
 			mEditorRuntime->FillEditorRenderViews(inputs);
@@ -946,10 +955,16 @@ namespace Unnamed {
 #endif
 
 		if (mDemoService && (mDemoService->IsPlayback() || mDemoService->
-			IsRecording())) {
+		                     IsRecording())) {
 			(void)mDemoService->Stop();
 		}
 		ServiceLocator::Register<IDemoService>(nullptr);
+
+		if (mInputSystem && mGameplayInputContext.IsValid()) {
+			const InputContextId contextId = mGameplayInputContext;
+			mGameplayInputContext          = {};
+			mInputSystem->PopInputContext(contextId);
+		}
 
 		if (mWorld) {
 			mWorld->Shutdown();
@@ -1045,9 +1060,9 @@ namespace Unnamed {
 					)
 				) {
 					mLastResizeWidth =
-							static_cast<uint32_t>(resize->width);
+						static_cast<uint32_t>(resize->width);
 					mLastResizeHeight =
-							static_cast<uint32_t>(resize->height);
+						static_cast<uint32_t>(resize->height);
 					if (mRenderModule) {
 						mRenderModule->OnResize(
 							mLastResizeWidth,
@@ -1129,9 +1144,9 @@ namespace Unnamed {
 				}
 
 				const World* transitionTarget =
-						ResolveSceneTransitionTargetWorld(
-							runtimeWorld
-						);
+					ResolveSceneTransitionTargetWorld(
+						runtimeWorld
+					);
 				if (!transitionTarget) {
 					Warning(
 						"Engine",
@@ -1254,7 +1269,7 @@ namespace Unnamed {
 		}
 
 		const MountedContentResolution resolution =
-				ResolveStartupScenePathDetailed(runtimeContext);
+			ResolveStartupScenePathDetailed(runtimeContext);
 		if (!resolution.existsOnDisk) {
 			Error(
 				"Engine",
@@ -1318,7 +1333,7 @@ namespace Unnamed {
 		const Path&            gameContentRoot = gamePaths.contentRoot;
 
 		const std::string gameContentRootFailureReason =
-				DescribeContentRootFailureReason(gameContentRoot);
+			DescribeContentRootFailureReason(gameContentRoot);
 		if (!gameContentRootFailureReason.empty()) {
 			Error(
 				"Engine",
@@ -1347,7 +1362,7 @@ namespace Unnamed {
 		}
 
 		const std::string coreRootFailureReason =
-				DescribeContentRootFailureReason(*coreRoot);
+			DescribeContentRootFailureReason(*coreRoot);
 		if (!coreRootFailureReason.empty()) {
 			Error(
 				"Engine",

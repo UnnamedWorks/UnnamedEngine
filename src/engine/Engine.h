@@ -8,6 +8,7 @@
 #include <engine/EngineConfig.h>
 #include <engine/render/RenderStartupOptions.h>
 #include <engine/scene/SceneLoadOptions.h>
+#include <engine/unnamed/subsystem/input/mapping/InputMappingTypes.h>
 
 class IPostProcess;
 class SrvManager;
@@ -162,6 +163,7 @@ namespace Unnamed {
 		std::unique_ptr<IDemoService> mDemoService;
 
 		std::unique_ptr<World> mWorld;
+		InputContextId mGameplayInputContext = {};
 
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		std::unique_ptr<ImGuiLayer>    mImGuiLayer;
