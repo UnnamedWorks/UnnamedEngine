@@ -62,9 +62,8 @@ namespace Unnamed {
 	};
 
 	/// @brief Runtime DLL 境界の ABI バージョン定義です。
-	enum class GameRuntimeAbiVersion : std::uint32_t {
-		V1      = 1,
-		Current = V1,
+	enum class GAME_RUNTIME_ABI_VERSION : std::uint32_t {
+		V1 = 1, CURRENT = V1,
 	};
 
 	/// @brief Runtime DLL が公開する C ABI 関数テーブル（v1）です。
@@ -72,26 +71,26 @@ namespace Unnamed {
 	struct GameRuntimeApiV1 {
 		/// @brief ABI 互換判定用バージョンです。
 		std::uint32_t abiVersion =
-			static_cast<std::uint32_t>(GameRuntimeAbiVersion::V1);
+			static_cast<std::uint32_t>(GAME_RUNTIME_ABI_VERSION::V1);
 		/// @brief 構造体サイズです。将来拡張時の前方互換判定に使います。
-		std::uint32_t structSize = sizeof(GameRuntimeApiV1);
+		std::uint32_t  structSize = sizeof(GameRuntimeApiV1);
 		/// @brief 予約フラグ（現状は 0 固定）です。
-		std::uint32_t reservedFlags = 0;
+		std::uint32_t  reservedFlags = 0;
 		/// @brief 予約領域（現状は 0 固定）です。
-		std::uint32_t reserved = 0;
+		std::uint32_t  reserved = 0;
 		/// @brief Runtime 名の取得関数です（ログ/診断向け）。
-		const char* (*GetRuntimeName)() = nullptr;
+		const char* (* getRuntimeName)() = nullptr;
 		/// @brief GameModule インスタンス生成関数です。
-		IGameModule* (*CreateGameModule)() = nullptr;
+		IGameModule* (*createGameModule)() = nullptr;
 		/// @brief GameModule インスタンス破棄関数です。
-		void (*DestroyGameModule)(IGameModule* module) = nullptr;
+		void (*        destroyGameModule)(IGameModule* module) = nullptr;
 	};
 
 	/// @brief Runtime DLL から取得する API 取得関数シグネチャです。
 	using GetGameRuntimeApiV1Function = const GameRuntimeApiV1* (*)();
 
 	/// @brief Runtime DLL で公開する API シンボル名です。
-	inline constexpr const char* kGameRuntimeApiV1SymbolName =
+	inline constexpr auto kGameRuntimeApiV1SymbolName =
 		"UnnamedGetGameRuntimeApiV1";
 
 #if defined(_WIN32)
@@ -110,15 +109,15 @@ namespace Unnamed {
 			return false;
 		}
 		if (api->abiVersion !=
-		    static_cast<std::uint32_t>(GameRuntimeAbiVersion::V1)) {
+		    static_cast<std::uint32_t>(GAME_RUNTIME_ABI_VERSION::V1)) {
 			return false;
 		}
 		if (api->structSize < sizeof(GameRuntimeApiV1)) {
 			return false;
 		}
-		return api->GetRuntimeName != nullptr &&
-		       api->CreateGameModule != nullptr &&
-		       api->DestroyGameModule != nullptr;
+		return api->getRuntimeName != nullptr &&
+		       api->createGameModule != nullptr &&
+		       api->destroyGameModule != nullptr;
 	}
 
 	/// @brief Runtime API 向けに GameModule を生成します。
@@ -143,7 +142,7 @@ namespace Unnamed {
 
 	template <typename TGameModule>
 	[[nodiscard]] const char*& RuntimeNameStorageForGameModuleType() {
-		static const char* kRuntimeName = "";
+		static auto kRuntimeName = "";
 		return kRuntimeName;
 	}
 
@@ -171,13 +170,14 @@ namespace Unnamed {
 		// 同一モジュール型については最初に渡された名前を返す運用とする。
 		SetRuntimeNameForGameModuleType<TGameModule>(runtimeName);
 		static const GameRuntimeApiV1 kApi = {
-			.abiVersion = static_cast<std::uint32_t>(GameRuntimeAbiVersion::V1),
+			.abiVersion = static_cast<std::uint32_t>(
+				GAME_RUNTIME_ABI_VERSION::V1),
 			.structSize = static_cast<std::uint32_t>(sizeof(GameRuntimeApiV1)),
 			.reservedFlags = 0u,
 			.reserved = 0u,
-			.GetRuntimeName = &GetRuntimeNameForGameModuleType<TGameModule>,
-			.CreateGameModule = &CreateRuntimeGameModuleInstance<TGameModule>,
-			.DestroyGameModule = &DestroyRuntimeGameModuleInstance<TGameModule>,
+			.getRuntimeName = &GetRuntimeNameForGameModuleType<TGameModule>,
+			.createGameModule = &CreateRuntimeGameModuleInstance<TGameModule>,
+			.destroyGameModule = &DestroyRuntimeGameModuleInstance<TGameModule>,
 		};
 		return &kApi;
 	}
