@@ -64,7 +64,7 @@ namespace Unnamed {
 		} else {
 			Error(
 				GetComponentName(),
-				"UInputSystemを取得できませんでした。BaseCharacterControllerは入力を処理できません。"
+				"InputSystemを取得できませんでした。BaseCharacterControllerは入力を処理できません。"
 			);
 		}
 
