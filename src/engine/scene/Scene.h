@@ -72,6 +72,7 @@ namespace Unnamed {
 		/// @param world ワールドへのポインタ
 		void SetWorld(World* world) noexcept;
 
+		// TODO: フォルダの扱いは要再検討
 		void AddFolder(std::string_view folderPath);
 		void RemoveFolder(std::string_view folderPath);
 		void RenameFolderSubtree(
