@@ -377,6 +377,7 @@ namespace Unnamed {
 
 			InputKey    key;
 			std::string pressCommand;
+			bool releasePending = false;
 		};
 
 		/// @brief マウスカーソルのロック状態を解決します
@@ -411,9 +412,11 @@ namespace Unnamed {
 		/// @param console コンソールシステム
 		void ProcessActiveCommandReleases(ConsoleSystem& console);
 
-		/// @brief 指定コンテキストの押下コマンドを管理対象から外し、同期的に解放します。
-		/// @param contextId 解放するコンテキストのID
-		void ReleaseContextActiveCommands(InputContextId contextId);
+		/// @brief 条件を満たすコマンドを同期解放し、再入時も未解放のコマンドを参照可能に保ちます。
+		/// @param console コマンドの実行先
+		/// @param releaseAll すべてのコマンドを解放するか
+		/// @param releaseKeys 物理キーのReleaseも判定するか
+		void ReleaseActiveCommands(ConsoleSystem* console, bool releaseAll, bool releaseKeys);
 
 		/// @brief すべてのアクティブコマンドを強制的に解放します。
 		void ReleaseAllActiveCommands(ConsoleSystem* console);
@@ -431,6 +434,8 @@ namespace Unnamed {
 
 		// コンテキストが入力権を失ったことを検知する
 		std::vector<ActiveCommand> mActiveCommands;
+		// 同じ物理Pressを切替後のContextへ再配送しないための世代
+		uint64_t mContextRevision = 0;
 
 		// 入力デバイスのリスト
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;

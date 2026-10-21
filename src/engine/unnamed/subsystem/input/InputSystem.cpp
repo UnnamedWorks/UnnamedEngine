@@ -2,7 +2,6 @@
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <Dbt.h>
-#include <iterator>
 #include <optional>
 #include <ranges>
 #include <unordered_set>
@@ -256,6 +255,8 @@ namespace Unnamed {
 						);
 						return false;
 					}
+					++mContextRevision;
+					ReleaseActiveCommands(ServiceLocator::Get<ConsoleSystem>(), false, false);
 
 					DevMsg(kChannel, "Input Context Updated: {}", name);
 
@@ -850,19 +851,27 @@ namespace Unnamed {
 		if (!mMappingSystem.DestroyContext(contextId)) {
 			return false;
 		}
-		ReleaseContextActiveCommands(contextId);
+		++mContextRevision;
+		ReleaseActiveCommands(ServiceLocator::Get<ConsoleSystem>(), false, false);
 		return true;
 	}
 
 	bool InputSystem::PushInputContext(const InputContextId contextId) {
-		return mMappingSystem.PushContext(contextId);
+		if (!mMappingSystem.PushContext(contextId)) {
+			return false;
+		}
+		++mContextRevision;
+		// BLOCK_LOWERによって入力権を失った下位Contextも同期解放
+		ReleaseActiveCommands(ServiceLocator::Get<ConsoleSystem>(), false, false);
+		return true;
 	}
 
 	bool InputSystem::PopInputContext(const InputContextId contextId) {
 		if (!mMappingSystem.PopContext(contextId)) {
 			return false;
 		}
-		ReleaseContextActiveCommands(contextId);
+		++mContextRevision;
+		ReleaseActiveCommands(ServiceLocator::Get<ConsoleSystem>(), false, false);
 		return true;
 	}
 
@@ -1082,6 +1091,7 @@ namespace Unnamed {
 			return;
 		}
 
+		const uint64_t contextRevision = mContextRevision;
 		const auto globalBinds = mCommandBinds;
 
 		// コマンドバインドの処理
@@ -1091,12 +1101,15 @@ namespace Unnamed {
 			}
 
 			for (const auto& command : commands) {
+				if (!mSnapshot.WasKeyPressed(key)) {
+					break;
+				}
+				RegisterActiveCommand(std::nullopt, key, command);
 				console->ExecuteCommand(
 					command,
 					EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
 				);
 
-				RegisterActiveCommand(std::nullopt, key, command);
 			}
 		}
 
@@ -1105,6 +1118,9 @@ namespace Unnamed {
 		// --------------------------------------------------------------------
 
 		ProcessActiveCommandReleases(*console);
+		if (contextRevision != mContextRevision) {
+			return;
+		}
 
 		// --------------------------------------------------------------------
 		// Context Command Press
@@ -1118,6 +1134,9 @@ namespace Unnamed {
 		std::unordered_set<InputKey> consumedKeys;
 
 		for (const InputContextId contextId : contexts) {
+			if (contextRevision != mContextRevision) {
+				break;
+			}
 			// コマンド実行によってコンテキストスタックが変化している可能性がある
 			if (!mMappingSystem.IsContextReceivingInput(contextId)) {
 				continue;
@@ -1164,6 +1183,8 @@ namespace Unnamed {
 				for (const auto& command : binding.commands) {
 					// 直前のコマンドでコンテキストスタックが変わった可能性がある
 					if (
+						contextRevision != mContextRevision ||
+						!mSnapshot.WasKeyPressed(binding.key) ||
 						!mMappingSystem.IsContextReceivingInput(
 							binding.contextId
 						)
@@ -1171,15 +1192,14 @@ namespace Unnamed {
 						break;
 					}
 
-					console->ExecuteCommand(
-						command,
-						EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
-					);
-
 					RegisterActiveCommand(
 						binding.contextId,
 						binding.key,
 						command
+					);
+					console->ExecuteCommand(
+						command,
+						EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
 					);
 				}
 			}
@@ -1226,96 +1246,45 @@ namespace Unnamed {
 	}
 
 	void InputSystem::ProcessActiveCommandReleases(ConsoleSystem& console) {
-		auto activeCommands = std::move(mActiveCommands);
-
-		mActiveCommands.clear();
-
-		for (auto& active : activeCommands) {
-			const bool bKeyReleased = mSnapshot.WasKeyReleased(active.key);
-
-			bool bContextBlocked = false;
-
-			if (active.contextId.has_value()) {
-				bContextBlocked = !mMappingSystem.IsContextReceivingInput(
-					*active.contextId
-				);
-			}
-
-			if (!bKeyReleased && !bContextBlocked) {
-				mActiveCommands.emplace_back(std::move(active));
-				continue;
-			}
-
-			const auto releaseCommand = MakeReleaseCommandFromPress(
-				active.pressCommand
-			);
-
-			if (!releaseCommand.has_value()) {
-				continue;
-			}
-
-			console.ExecuteCommand(
-				*releaseCommand,
-				EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
-			);
-		}
+		ReleaseActiveCommands(&console, false, true);
 	}
 
-	void InputSystem::ReleaseContextActiveCommands(
-		const InputContextId contextId
+	void InputSystem::ReleaseActiveCommands(
+		ConsoleSystem* console, const bool releaseAll, const bool releaseKeys
 	) {
-		const auto releaseBegin = std::stable_partition(
-			mActiveCommands.begin(),
-			mActiveCommands.end(),
-			[contextId](const ActiveCommand& active) {
-				return active.contextId != contextId;
+		// 再入でContextが再有効化されても、この時点のRelease対象を維持
+		bool hasPendingRelease = false;
+		for (auto& active : mActiveCommands) {
+			const bool contextBlocked = active.contextId.has_value() &&
+				!mMappingSystem.IsContextReceivingInput(*active.contextId);
+			if (releaseAll || contextBlocked ||
+				(releaseKeys && mSnapshot.WasKeyReleased(active.key))) {
+				active.releasePending = true;
 			}
-		);
-		const std::vector<ActiveCommand> releasedCommands(
-			std::make_move_iterator(releaseBegin),
-			std::make_move_iterator(mActiveCommands.end())
-		);
-		// コマンド実行による再入より先に管理対象から除外
-		mActiveCommands.erase(releaseBegin, mActiveCommands.end());
-
-		auto* console = ServiceLocator::Get<ConsoleSystem>();
-		if (!console) {
+			hasPendingRelease |= active.releasePending;
+		}
+		if (!hasPendingRelease) {
 			return;
 		}
-		for (const auto& active : releasedCommands) {
-			if (const auto command = MakeReleaseCommandFromPress(
-				active.pressCommand
-			)) {
+		while (true) {
+			const auto it = std::ranges::find_if(mActiveCommands,
+				[](const ActiveCommand& active) { return active.releasePending; });
+			if (it == mActiveCommands.end()) {
+				break;
+			}
+
+			const auto command = MakeReleaseCommandFromPress(it->pressCommand);
+			// 実行前に除外し、残りは再入先からも同期解放できる状態を維持
+			mActiveCommands.erase(it);
+			if (console && command) {
 				console->ExecuteCommand(
-					*command,
-					EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+					*command, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
 				);
 			}
 		}
 	}
 
 	void InputSystem::ReleaseAllActiveCommands(ConsoleSystem* console) {
-		const auto activeCommands = std::move(mActiveCommands);
-
-		mActiveCommands.clear();
-
-		if (!console) {
-			return;
-		}
-
-		for (const auto& active : activeCommands) {
-			const auto releaseCommand = MakeReleaseCommandFromPress(
-				active.pressCommand
-			);
-
-			if (!releaseCommand.has_value()) {
-				continue;
-			}
-
-			console->ExecuteCommand(
-				*releaseCommand,
-				EXEC_FLAG::FROM_USER // | EXEC_FLAG::SILENT
-			);
-		}
+		ReleaseActiveCommands(console, true, false);
 	}
 }

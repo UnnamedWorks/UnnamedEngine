@@ -96,6 +96,8 @@ namespace Unnamed {
 		GuidGenerator cloneGuid;
 		const auto    cloneStart = std::chrono::steady_clock::now();
 		if (!SceneSerializer::CloneScene(*mScene, *playScene, cloneGuid)) {
+			playScene.reset();
+			playWorld->Shutdown();
 			return;
 		}
 		const auto cloneEnd = std::chrono::steady_clock::now();

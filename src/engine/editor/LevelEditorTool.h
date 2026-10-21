@@ -164,6 +164,7 @@ namespace Unnamed {
 		EntityId mSelectedEntityId = 0;
 		bool     mOpen             = true;
 		bool     mInitialized      = false;
+		bool     mChangingPlayState = false;
 		bool     mDockInitialized  = false;
 
 		EDITOR_PRESENT_MODE mPresentMode = EDITOR_PRESENT_MODE::VIEWPORT_PANEL;

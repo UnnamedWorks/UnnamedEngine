@@ -170,6 +170,8 @@ namespace Unnamed {
 		if (!mInitialized) {
 			return;
 		}
+		// ReleaseコマンドからのPlay/Stop再入を拒否
+		mInitialized = false;
 		SwitchInputContext({});
 		mEditorWorld.StopPlayInEditor();
 		if (mSequenceEditorController) {
@@ -561,28 +563,31 @@ namespace Unnamed {
 	}
 
 	void LevelEditorTool::StartPlayInEditor() {
-		if (!mInitialized || IsPlaying()) {
+		if (!mInitialized || mChangingPlayState || IsPlaying()) {
 			return;
 		}
-		SwitchInputContext({});
+		mChangingPlayState = true;
 		mEditorWorld.StartPlayInEditor();
 		if (!IsPlaying()) {
-			SwitchInputContext(mEditorInputContext);
+			mChangingPlayState = false;
 			return;
 		}
 		if (!SwitchInputContext(mGameplayInputContext)) {
 			mEditorWorld.StopPlayInEditor();
 			SwitchInputContext(mEditorInputContext);
 		}
+		mChangingPlayState = false;
 	}
 
 	void LevelEditorTool::StopPlayInEditor() {
-		if (!mInitialized || !IsPlaying()) {
+		if (!mInitialized || mChangingPlayState || !IsPlaying()) {
 			return;
 		}
+		mChangingPlayState = true;
 		SwitchInputContext({});
 		mEditorWorld.StopPlayInEditor();
 		SwitchInputContext(mEditorInputContext);
+		mChangingPlayState = false;
 	}
 
 	bool LevelEditorTool::IsProfilerWindowOpen() const {
