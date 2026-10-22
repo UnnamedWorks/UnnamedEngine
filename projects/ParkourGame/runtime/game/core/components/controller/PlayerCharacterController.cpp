@@ -276,49 +276,49 @@ namespace Unnamed {
 		}
 
 		// 入力は描画フレームごとに回収して、低tickrate時の取りこぼしを防ぐ。
-		if (mInput->IsPressed("sprint")) {
+		if (mInput->IsPressed(mGameplayInputContext, "sprint")) {
 			mQueuedSprintPressCount = std::min(
 				mQueuedSprintPressCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsPressed("attack1")) {
+		if (mInput->IsPressed(mGameplayInputContext, "attack1")) {
 			mQueuedPrimaryPressedCount = std::min(
 				mQueuedPrimaryPressedCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsReleased("attack1")) {
+		if (mInput->IsReleased(mGameplayInputContext, "attack1")) {
 			mQueuedPrimaryReleasedCount = std::min(
 				mQueuedPrimaryReleasedCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsPressed("attack2")) {
+		if (mInput->IsPressed(mGameplayInputContext, "attack2")) {
 			mQueuedSecondaryPressedCount = std::min(
 				mQueuedSecondaryPressedCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsReleased("attack2")) {
+		if (mInput->IsReleased(mGameplayInputContext, "attack2")) {
 			mQueuedSecondaryReleasedCount = std::min(
 				mQueuedSecondaryReleasedCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsPressed("reload")) {
+		if (mInput->IsPressed(mGameplayInputContext, "reload")) {
 			mQueuedReloadPressedCount = std::min(
 				mQueuedReloadPressedCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsPressed("invnext")) {
+		if (mInput->IsPressed(mGameplayInputContext, "invnext")) {
 			mQueuedCycleNextPressedCount = std::min(
 				mQueuedCycleNextPressedCount + 1u,
 				64u
 			);
 		}
-		if (mInput->IsPressed("invprev")) {
+		if (mInput->IsPressed(mGameplayInputContext, "invprev")) {
 			mQueuedCyclePrevPressedCount = std::min(
 				mQueuedCyclePrevPressedCount + 1u,
 				64u
@@ -333,8 +333,8 @@ namespace Unnamed {
 			return;
 		}
 
-		const Vec2 mouseLookDelta   = mInput->Axis2D("Mouse");
-		const Vec2 gamepadLookDelta = mInput->Axis2D("GamepadLook");
+		const Vec2 mouseLookDelta   = mInput->Axis2D(mGameplayInputContext, "Mouse");
+		const Vec2 gamepadLookDelta = mInput->Axis2D(mGameplayInputContext, "GamepadLook");
 		mCameraRotator->AddLookInput(
 			mouseLookDelta,
 			gamepadLookDelta,
@@ -431,27 +431,27 @@ namespace Unnamed {
 			return input;
 		}
 
-		if (mInput->IsHeld("moveright")) {
+		if (mInput->IsHeld(mGameplayInputContext, "moveright")) {
 			input.moveAxis.x += 1.0f;
 		}
-		if (mInput->IsHeld("moveleft")) {
+		if (mInput->IsHeld(mGameplayInputContext, "moveleft")) {
 			input.moveAxis.x -= 1.0f;
 		}
-		if (mInput->IsHeld("forward")) {
+		if (mInput->IsHeld(mGameplayInputContext, "forward")) {
 			input.moveAxis.z += 1.0f;
 		}
-		if (mInput->IsHeld("back")) {
+		if (mInput->IsHeld(mGameplayInputContext, "back")) {
 			input.moveAxis.z -= 1.0f;
 		}
-		if (mInput->IsHeld("moveup")) {
+		if (mInput->IsHeld(mGameplayInputContext, "moveup")) {
 			input.moveAxis.y += 1.0f;
 		}
-		if (mInput->IsHeld("movedown")) {
+		if (mInput->IsHeld(mGameplayInputContext, "movedown")) {
 			input.moveAxis.y -= 1.0f;
 		}
 
-		input.jumpPressed   = mInput->IsHeld("jump");
-		input.crouchPressed = mInput->IsHeld("duck");
+		input.jumpPressed   = mInput->IsHeld(mGameplayInputContext, "jump");
+		input.crouchPressed = mInput->IsHeld(mGameplayInputContext, "duck");
 		input.sprintPressed = mQueuedSprintPressCount > 0;
 		if (input.sprintPressed) {
 			--mQueuedSprintPressCount;
@@ -489,7 +489,7 @@ namespace Unnamed {
 		}
 
 		input.weapon.primary.pressed  = mQueuedPrimaryPressedCount > 0;
-		input.weapon.primary.held     = mInput->IsHeld("attack1");
+		input.weapon.primary.held     = mInput->IsHeld(mGameplayInputContext, "attack1");
 		input.weapon.primary.released = mQueuedPrimaryReleasedCount > 0;
 		if (input.weapon.primary.pressed) {
 			--mQueuedPrimaryPressedCount;
@@ -499,7 +499,7 @@ namespace Unnamed {
 		}
 
 		input.weapon.secondary.pressed  = mQueuedSecondaryPressedCount > 0;
-		input.weapon.secondary.held     = mInput->IsHeld("attack2");
+		input.weapon.secondary.held     = mInput->IsHeld(mGameplayInputContext, "attack2");
 		input.weapon.secondary.released = mQueuedSecondaryReleasedCount > 0;
 		if (input.weapon.secondary.pressed) {
 			--mQueuedSecondaryPressedCount;

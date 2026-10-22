@@ -85,6 +85,13 @@ namespace Unnamed {
 		}
 	}
 
+	void TitleFlowComponent::OnAttached() {
+		BaseComponent::OnAttached();
+		if (const auto* input = GetInputSystem()) {
+			mGameplayInputContext = input->FindInputContextIdByName("game").value_or(InputContextId{});
+		}
+	}
+
 	void TitleFlowComponent::OnFrameInputTick(const float deltaTime) {
 		TickTitle(deltaTime);
 	}
@@ -95,6 +102,7 @@ namespace Unnamed {
 
 	void TitleFlowComponent::OnDetached() {
 		ExitTitleMode();
+		mGameplayInputContext = {};
 		BaseComponent::OnDetached();
 	}
 
@@ -173,7 +181,7 @@ namespace Unnamed {
 
 		if (!mPlayRequested) {
 			if (const InputSystem* input = GetInputSystem()) {
-				if (input->IsPressed("jump")) {
+				if (input->IsPressed(mGameplayInputContext, "jump")) {
 					mPlayRequested = true;
 				}
 			}

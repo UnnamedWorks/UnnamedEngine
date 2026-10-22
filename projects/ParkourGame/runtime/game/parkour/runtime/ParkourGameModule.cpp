@@ -31,6 +31,12 @@ namespace Unnamed {
 			}
 
 			// PIEの再生成でも同じ軸バインドを重複させない
+			input.Unbind(*contextId, "Mouse");
+			input.Unbind(*contextId, "GamepadLook");
+			input.BindAxis2D(*contextId, "Mouse", InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_X), INPUT_AXIS::X, 1.0f);
+			input.BindAxis2D(*contextId, "Mouse", InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_Y), INPUT_AXIS::Y, 1.0f);
+			input.BindAxis2D(*contextId, "GamepadLook", InputKey::Gamepad(GAMEPAD_INPUT_CODE::RX), INPUT_AXIS::X, 1.0f);
+			input.BindAxis2D(*contextId, "GamepadLook", InputKey::Gamepad(GAMEPAD_INPUT_CODE::RY), INPUT_AXIS::Y, -1.0f);
 			input.Unbind(*contextId, "GamepadMove");
 			input.BindAxis2D(
 				*contextId, "GamepadMove", InputKey::Gamepad(GAMEPAD_INPUT_CODE::LX),

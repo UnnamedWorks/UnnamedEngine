@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "engine/unnamed/subsystem/input/mapping/InputMappingTypes.h"
 #include <string>
 #include <string_view>
 #include <vector>
@@ -202,6 +203,7 @@ namespace Unnamed {
 		uint64_t mCountAudioSourceGuid   = 0;
 		uint64_t mStartAudioSourceGuid   = 0;
 
+		InputContextId mGameplayInputContext = {};
 		std::string mSkipAction = "";
 
 		std::string mCountdownDigitWidgetName = "OpeningCountdownDigit";

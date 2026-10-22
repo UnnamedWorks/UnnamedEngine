@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string_view>
+#include "engine/unnamed/subsystem/input/mapping/InputMappingTypes.h"
 
 #include <json.hpp>
 
@@ -52,10 +53,10 @@ namespace Unnamed {
 
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
-		void                              BindLookAxisOnce() const;
 		void                              ApplyRotationFromCurrentAngles() const;
 
 		ConsoleSystem* mConsole = nullptr;
+		InputContextId mGameplayInputContext = {};
 		InputSystem*   mInput   = nullptr;
 
 		float mCurrentPitch = 0.0f;
@@ -70,4 +71,3 @@ namespace Unnamed {
 		Vec2           mExternalLookOffsetDegrees = Vec2::zero;
 	};
 }
-

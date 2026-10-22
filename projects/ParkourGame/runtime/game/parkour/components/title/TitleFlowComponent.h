@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "engine/unnamed/subsystem/input/mapping/InputMappingTypes.h"
 #include <string_view>
 
 #include "core/filesystem/Path.h"
@@ -20,6 +21,8 @@ namespace Unnamed {
 	/// @brief タイトル演出（デモ再生/フェード/開始遷移）を制御するコンポーネントです。
 	class TitleFlowComponent final : public BaseComponent {
 	public:
+		/// @brief Gameplayの入力Contextを取得します。
+		void OnAttached() override;
 		/// @brief タイトル演出を更新します。
 		/// @param deltaTime 前フレームからの経過時間（秒）
 		void OnFrameInputTick(float deltaTime) override;
@@ -99,6 +102,7 @@ namespace Unnamed {
 		Gui::UiTextureComponent* mPlayPromptTexture  = nullptr;
 		Gui::UiTextureComponent* mFadeOverlayTexture = nullptr;
 
+		InputContextId mGameplayInputContext = {};
 		PHASE       mPhase               = PHASE::INACTIVE;
 		float       mPhaseElapsedSeconds = 0.0f;
 		float       mPromptBlinkSeconds  = 0.0f;

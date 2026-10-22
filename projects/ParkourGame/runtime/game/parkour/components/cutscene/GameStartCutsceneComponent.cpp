@@ -40,6 +40,9 @@ namespace Unnamed {
 	}
 
 	void GameStartCutsceneComponent::OnAttached() {
+		if (const auto* input = GetInputSystem()) {
+			mGameplayInputContext = input->FindInputContextIdByName("game").value_or(InputContextId{});
+		}
 		// シーンロード中は参照先エンティティが未生成のため、開始は初回Tickへ遅延します。
 		mPendingStartSequence = true;
 	}
@@ -50,7 +53,7 @@ namespace Unnamed {
 		}
 
 		if (const InputSystem* input = GetInputSystem();
-		    input && input->IsPressed(mSkipAction)) {
+		    input && input->IsPressed(mGameplayInputContext, mSkipAction)) {
 			EnterCountdown();
 		}
 	}

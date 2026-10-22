@@ -20,7 +20,9 @@
 namespace Unnamed {
 	void CameraRotatorComponent::OnAttached() {
 		mInput = GetInputSystem();
-		BindLookAxisOnce();
+		if (mInput) {
+			mGameplayInputContext = mInput->FindInputContextIdByName("game").value_or(InputContextId{});
+		}
 		if (const TransformComponent* transform = GetTransform()) {
 			const Vec3 eulerDegrees = transform->GetRotation().ToEulerDegrees();
 			mCurrentPitch           = eulerDegrees.x;
@@ -39,8 +41,8 @@ namespace Unnamed {
 		Vec2 mouseDelta   = Vec2::zero;
 		Vec2 gamepadDelta = Vec2::zero;
 		if (mInput) {
-			mouseDelta   = mInput->Axis2D("Mouse");
-			gamepadDelta = mInput->Axis2D("GamepadLook");
+			mouseDelta   = mInput->Axis2D(mGameplayInputContext, "Mouse");
+			gamepadDelta = mInput->Axis2D(mGameplayInputContext, "GamepadLook");
 		}
 
 		AddLookInput(mouseDelta, gamepadDelta, deltaTime);
@@ -192,28 +194,6 @@ namespace Unnamed {
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 
-	void CameraRotatorComponent::BindLookAxisOnce() const {
-		static bool sBound = false;
-		if (sBound || !mInput) {
-			return;
-		}
-
-		constexpr InputKey mouseX = InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_X);
-		constexpr InputKey mouseY = InputKey::Mouse(MOUSE_INPUT_CODE::AXIS_Y);
-
-		constexpr InputKey gamepadLookX = InputKey::Gamepad(
-			GAMEPAD_INPUT_CODE::RX
-		);
-		constexpr InputKey gamepadLookY = InputKey::Gamepad(
-			GAMEPAD_INPUT_CODE::RY
-		);
-
-		mInput->BindAxis2D("Mouse", mouseX, INPUT_AXIS::X, 1.0f);
-		mInput->BindAxis2D("Mouse", mouseY, INPUT_AXIS::Y, 1.0f);
-		mInput->BindAxis2D("GamepadLook", gamepadLookX, INPUT_AXIS::X, 1.0f);
-		mInput->BindAxis2D("GamepadLook", gamepadLookY, INPUT_AXIS::Y, -1.0f);
-		sBound = true;
-	}
 
 	void CameraRotatorComponent::ApplyRotationFromCurrentAngles() const {
 		auto* transform = GetTransform();
