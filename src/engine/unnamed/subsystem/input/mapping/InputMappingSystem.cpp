@@ -151,7 +151,8 @@ namespace Unnamed {
 		}
 
 		if (const auto* entry = FindContext(contextId)) {
-			entry->context->ResetStates();
+			// 同期Releaseが元の入力ソースを解除するまで保持
+			entry->context->ResetStates(true);
 		}
 
 		return true;
@@ -364,7 +365,7 @@ namespace Unnamed {
 
 	void InputMappingSystem::HandleExternalAction(
 		const InputContextId contextId, const std::string& action,
-		const bool           pressed
+		const bool           pressed, const uint64_t sourceId
 	) {
 		// ReSharper disable once CppLocalVariableMayBeConst
 		auto* entry = FindContext(contextId);
@@ -381,7 +382,7 @@ namespace Unnamed {
 			return;
 		}
 
-		entry->context->HandleExternalAction(action, pressed);
+		entry->context->HandleExternalAction(action, pressed, sourceId);
 	}
 
 	void InputMappingSystem::RegisterConsumedKey(

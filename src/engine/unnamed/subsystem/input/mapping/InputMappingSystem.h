@@ -177,8 +177,9 @@ namespace Unnamed {
 		/// @param contextId 指定するコンテキスト
 		/// @param action アクション名
 		/// @param pressed 押下状態（trueなら押下、falseなら解放）
+		/// @param sourceId 入力ソースの識別子（0は直接実行用）
 		void HandleExternalAction(
-			InputContextId contextId, const std::string& action, bool pressed
+			InputContextId contextId, const std::string& action, bool pressed, uint64_t sourceId = 0
 		);
 
 		/// @brief 外部の入力処理が、このコンテキストでキーを消費したことを登録します。

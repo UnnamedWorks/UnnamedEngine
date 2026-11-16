@@ -63,8 +63,9 @@ namespace Unnamed {
 		/// @brief 外部からのアクション入力を処理します
 		/// @param action アクション名
 		/// @param pressed 押下状態（trueなら押下、falseなら解放）
+		/// @param sourceId 入力ソースの識別子（0は直接実行用）
 		void HandleExternalAction(
-			const std::string& action, bool pressed
+			const std::string& action, bool pressed, uint64_t sourceId = 0
 		);
 
 		/// @brief 指定したアクションの状態を取得します
@@ -93,14 +94,16 @@ namespace Unnamed {
 		[[nodiscard]] Vec2 Axis2D(const std::string& axis) const;
 
 		/// @brief 入力状態をリセットします
-		void ResetStates();
+		/// @param preserveExternalSources 同期Release用のコマンドソースを保持するか
+		void ResetStates(bool preserveExternalSources = false);
 
 	private:
 		std::unordered_map<std::string, InputActionState> mActionStates;
 		std::unordered_map<std::string, InputAxisState1D> mAxisStates1D;
 		std::unordered_map<std::string, InputAxisState2D> mAxisStates2D;
 
-		std::unordered_set<std::string> mExternalHeldActions;
+		// 0は直接Console入力、その他は押下コマンドの有効期間を識別
+		std::unordered_map<std::string, std::vector<uint64_t>> mExternalHeldActions;
 
 		std::vector<InputBinding> mBindings;
 	};

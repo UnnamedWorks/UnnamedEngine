@@ -17,8 +17,8 @@ namespace Unnamed {
 		}
 
 		// External ActionのHeldだけ復元
-		for (const auto& action : mExternalHeldActions) {
-			mActionStates[action].bIsHeld = true;
+		for (const auto& [action, sources] : mExternalHeldActions) {
+			mActionStates[action].bIsHeld = !sources.empty();
 		}
 
 		// 
@@ -230,20 +230,22 @@ namespace Unnamed {
 	}
 
 	void InputMappingContext::HandleExternalAction(
-		const std::string& action, const bool pressed
+		const std::string& action, const bool pressed, const uint64_t sourceId
 	) {
 		auto& state = mActionStates[action];
+		auto& sources = mExternalHeldActions[action];
+		const auto it = std::ranges::find(sources, sourceId);
 
 		if (pressed) {
-			mExternalHeldActions.insert(action);
-
-			state.bIsPressed = true;
+			if (it != sources.end()) { return; }
+			state.bIsPressed |= sources.empty();
+			sources.push_back(sourceId);
 			state.bIsHeld    = true;
 		} else {
-			mExternalHeldActions.erase(action);
-
-			state.bIsReleased = true;
-			state.bIsHeld     = false;
+			if (it == sources.end()) { return; }
+			sources.erase(it);
+			state.bIsReleased |= sources.empty();
+			state.bIsHeld = !sources.empty();
 		}
 	}
 
@@ -289,9 +291,16 @@ namespace Unnamed {
 		return it->second.value;
 	}
 
-	void InputMappingContext::ResetStates() {
+	void InputMappingContext::ResetStates(const bool preserveExternalSources) {
 		// 外部ホールドアクションをリセット
-		mExternalHeldActions.clear();
+		for (auto& sources : mExternalHeldActions | std::views::values) {
+			if (preserveExternalSources) {
+				// 直接実行にはActive Commandがないため、Context解除時にクリア
+				std::erase(sources, uint64_t{0});
+			} else {
+				sources.clear();
+			}
+		}
 
 		// アクションの状態をリセット
 		for (auto& state : mActionStates | std::views::values) {
